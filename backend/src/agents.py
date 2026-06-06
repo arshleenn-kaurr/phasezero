@@ -40,7 +40,7 @@ _NCBI_API_KEY = os.environ.get("NCBI_API_KEY")
 PUBMED_BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 CTGOV_BASE = "https://clinicaltrials.gov/api/v2/studies"
 OPENFDA_LABEL = "https://api.fda.gov/drug/label.json"
-CHEMBL_TARGET = "https://www.ebi.ac.uk/chembl/api/data/target/search.json"
+CHEMBL_TARGET = "https://www.ebi.ac.uk/chembl/api/data/target/search"
 BIONEMO_ENDPOINT = os.environ.get(
     "BIONEMO_ENDPOINT",
     "https://health.api.nvidia.com/v1/biology/nvidia/bionemo",  # TODO(team): confirm NIM URL
@@ -63,6 +63,16 @@ def _gene_symbol(target: str) -> str:
         if first:
             return first
     return (target or "").strip()
+
+
+def _target_name(target: str) -> str:
+    """Human-readable target name with any parenthetical stripped.
+
+    "B7-H4 (VTCN1)" -> "B7-H4"; "Tissue Factor (TF / CD142 / F3)" -> "Tissue Factor".
+    Used for free-text APIs (e.g. ChEMBL) that reject terse gene abbreviations.
+    """
+    name = re.sub(r"\([^)]*\)", "", target or "").strip()
+    return name or (target or "").strip()
 
 
 def _ncbi_params(**extra) -> dict:
@@ -269,12 +279,14 @@ async def commercial_agent(indication: str, target: str) -> AgentOutput:
 # ---------------------------------------------------------------------------
 
 async def adc_design_agent(indication: str, target: str) -> AgentOutput:
-    gene = _gene_symbol(target)
+    # ChEMBL free-text search rejects terse gene abbreviations (e.g. "TF" -> 400),
+    # so query by the descriptive target name and request JSON explicitly.
+    query = _target_name(target)
     findings: list[str] = []
     flags: list[str] = []
 
     async with httpx.AsyncClient(timeout=_TIMEOUT, headers=_HEADERS) as client:
-        resp = await client.get(CHEMBL_TARGET, params={"q": gene})
+        resp = await client.get(CHEMBL_TARGET, params={"q": query, "format": "json"})
         resp.raise_for_status()
         targets = resp.json().get("targets", [])
 
@@ -282,7 +294,7 @@ async def adc_design_agent(indication: str, target: str) -> AgentOutput:
     #             kinetics, DAR precedent, and payload (MMAE vs DXd) options.
     if targets:
         top = targets[0]
-        pref_name = top.get("pref_name", gene)
+        pref_name = top.get("pref_name", query)
         findings.append(f"ChEMBL: {len(targets)} target record(s); top match '{pref_name}'.")
         findings.append("Payload class and DAR optimization required for therapeutic window.")
         confidence = 60
