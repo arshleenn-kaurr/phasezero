@@ -315,6 +315,7 @@ async def _build_detail(candidate_id: str) -> dict:
         },
         "bionemo": _bionemo_view(out["bionemo"]),
         "agents": _agents_view(out["agents"]),
+        "signal_intelligence": _signal_intelligence_view(out["signal_intelligence"]),
         "evidence_graph": out["evidence_graph"],
         "memo": out["memo"],
     }
@@ -363,6 +364,43 @@ def _agents_view(agents: dict) -> list[dict]:
         }
         for name, data in agents.items()
     ]
+
+
+def _signal_intelligence_view(signal: dict) -> dict:
+    def rounded(value: object) -> object:
+        return round(value, 1) if isinstance(value, (int, float)) else value
+
+    events = [
+        {
+            "id": event.get("id", ""),
+            "source_type": event.get("source_type", ""),
+            "agent_name": event.get("agent_name", ""),
+            "quarter": event.get("quarter", ""),
+            "entity_type": event.get("entity_type", ""),
+            "entity": event.get("entity", ""),
+            "claim": event.get("claim", ""),
+            "polarity": event.get("polarity", "neutral"),
+            "evidence_tier": event.get("evidence_tier", ""),
+            "weighted_signal": rounded(event.get("weighted_signal", 0)),
+            "extracted_signal": event.get("extracted_signal", ""),
+            "diligence_question": event.get("diligence_question", ""),
+        }
+        for event in signal.get("events", [])
+    ]
+    return {
+        **signal,
+        "momentum_score": rounded(signal.get("momentum_score", 0)),
+        "consensus_attention": rounded(signal.get("consensus_attention", 0)),
+        "contradiction_burden": rounded(signal.get("contradiction_burden", 0)),
+        "evidence_agreement": rounded(signal.get("evidence_agreement", 0)),
+        "missing_data_burden": rounded(signal.get("missing_data_burden", 0)),
+        "top_positive_signals": signal.get("top_positive_signals", [])[:4],
+        "top_negative_signals": signal.get("top_negative_signals", [])[:4],
+        "events": events,
+        "diligence_questions": signal.get("diligence_questions", [])[:5],
+        "alpha_supporting": signal.get("alpha_supporting", [])[:4],
+        "warning_signals": signal.get("warning_signals", [])[:4],
+    }
 
 
 def _load_json(name: str) -> dict:

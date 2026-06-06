@@ -28,7 +28,9 @@ function useAsync<T>(
     setLoading(true);
     setError(false);
     loader(controller.signal)
-      .then((result) => setData(result))
+      .then((result) => {
+        if (!controller.signal.aborted) setData(result);
+      })
       .catch((err) => {
         if (controller.signal.aborted) return;
         setError(true);

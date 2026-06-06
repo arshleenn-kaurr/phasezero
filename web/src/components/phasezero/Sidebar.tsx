@@ -27,7 +27,7 @@ const NAV = [
   { to: "/", label: "Briefing Room", icon: Crosshair },
   { to: "/opportunities", label: "Opportunities", icon: Briefcase },
   { to: "/evidence", label: "Evidence", icon: Microscope },
-  { to: "/signals", label: "Signal Scan", icon: BarChart3 },
+  { to: "/signals", label: "Signal Intel", icon: BarChart3 },
   { to: "/models", label: "Models", icon: CircleDashed },
   { to: "/simulation", label: "Simulation", icon: TrendingUp },
   { to: "/memos", label: "Memos", icon: BookText },

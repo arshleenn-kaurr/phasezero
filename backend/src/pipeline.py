@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from src.agents import run_all_agents
 from src.bionemo_real import run_bionemo_plausibility
 from src.evidence_graph import build_evidence_graph, rank_candidates_by_evidence_similarity, summarize_evidence_graph
@@ -5,7 +7,11 @@ from src.hmm_model import run_hmm
 from src.memo import generate_memo
 from src.schemas import HMMResult, ScoreBundle
 from src.scoring import compute_all_scores
+from src.signal_intelligence import load_signal_events, summarize_signal_intelligence
 from src.simulations import run_monte_carlo
+
+
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
 
 async def run_diligence_pipeline(candidate: dict, assumptions: dict, all_candidates: list, evidence: dict) -> dict:
@@ -20,6 +26,8 @@ async def run_diligence_pipeline(candidate: dict, assumptions: dict, all_candida
     hmm = HMMResult.model_validate(run_hmm(cid, candidate["base_scores"], assumptions)).model_dump()
     bionemo = run_bionemo_plausibility(cid, candidate["base_scores"], assumptions)
     agents = await run_all_agents(candidate["indication"], candidate["target"])
+    signal_events = load_signal_events(DATA_DIR / "signal_events.json")
+    signal_intelligence = summarize_signal_intelligence(signal_events, candidate)
     graph = build_evidence_graph(all_candidates, evidence)
     graph_summary = summarize_evidence_graph(graph, cid)
     similarity_query = " ".join(
@@ -35,7 +43,7 @@ async def run_diligence_pipeline(candidate: dict, assumptions: dict, all_candida
         evidence,
         similarity_query,
     )
-    memo = generate_memo(candidate, assumptions, scores, simulation, hmm, bionemo, agents)
+    memo = generate_memo(candidate, assumptions, scores, simulation, hmm, bionemo, agents, signal_intelligence)
 
     return {
         "candidate_id": cid,
@@ -44,6 +52,7 @@ async def run_diligence_pipeline(candidate: dict, assumptions: dict, all_candida
         "hmm": hmm,
         "bionemo": bionemo,
         "agents": agents,
+        "signal_intelligence": signal_intelligence,
         "evidence_graph": graph_summary,
         "evidence_similarity_rankings": similarity_rankings,
         "memo": memo,

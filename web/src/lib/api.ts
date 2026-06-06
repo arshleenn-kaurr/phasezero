@@ -165,6 +165,49 @@ export interface EvidenceGraph {
   top_signals: { signal: string; source: string; quality: string; centrality: number }[];
 }
 
+export interface MomentumMetric {
+  label: string;
+  velocity: number;
+  baseline: number;
+  acceleration: number;
+  direction: "increasing" | "declining" | "flat" | "warning" | "supportive" | "mixed";
+  interpretation: string;
+}
+
+export interface SignalEvent {
+  id: string;
+  source_type: string;
+  agent_name: string;
+  quarter: string;
+  entity_type: string;
+  entity: string;
+  claim: string;
+  polarity: "positive" | "neutral" | "negative";
+  evidence_tier: string;
+  weighted_signal: number;
+  extracted_signal: string;
+  diligence_question: string;
+}
+
+export interface SignalIntelligence {
+  signal_regime: string;
+  momentum_score: number;
+  consensus_attention: number;
+  momentum: Record<string, MomentumMetric>;
+  contradiction_burden: number;
+  evidence_agreement: number;
+  most_disputed_claim: string;
+  most_disputed_detail: string;
+  missing_data_burden: number;
+  missing_fields: string[];
+  top_positive_signals: SignalEvent[];
+  top_negative_signals: SignalEvent[];
+  events: SignalEvent[];
+  diligence_questions: string[];
+  alpha_supporting: string[];
+  warning_signals: string[];
+}
+
 export interface CandidateDetail extends CandidateSummary {
   patient_subgroup: string;
   adc_design_thesis: string;
@@ -179,6 +222,7 @@ export interface CandidateDetail extends CandidateSummary {
   hmm: HmmState;
   bionemo: BioNemo;
   agents: AgentView[];
+  signal_intelligence: SignalIntelligence;
   evidence_graph: EvidenceGraph;
   memo: string;
 }

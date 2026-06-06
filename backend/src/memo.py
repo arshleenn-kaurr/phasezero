@@ -6,6 +6,7 @@ falls back to static template strings otherwise.
 
 import json
 from datetime import date
+from typing import Optional
 
 try:
     from src import nvidia_client as _nvidia_client
@@ -102,6 +103,7 @@ def generate_memo(
     hmm: dict,
     bionemo: dict,
     agents: dict,
+    signal_intelligence: Optional[dict] = None,
 ) -> str:
     today = date.today().strftime("%B %d, %Y")
     cid = candidate["id"]
@@ -177,6 +179,8 @@ def generate_memo(
     )
 
     changed_lines = _format_assumption_changes(assumptions)
+    signal_intelligence = signal_intelligence or {}
+    signal_lines = _format_signal_intelligence(signal_intelligence)
 
     memo = f"""# PHASEZERO ADC DILIGENCE MEMO
 **Generated:** {today}
@@ -288,7 +292,13 @@ Key uncertainty drivers: clinical differentiation variance, competitor entry tim
 
 ---
 
-## 10. Missing Data Map
+## 10. Signal Intelligence Readout
+
+{signal_lines}
+
+---
+
+## 11. Missing Data Map
 
 Key evidence gaps that increase model uncertainty:
 
@@ -296,19 +306,19 @@ Key evidence gaps that increase model uncertainty:
 
 ---
 
-## 11. What Would Need To Be True
+## 12. What Would Need To Be True
 
 {what_true}
 
 ---
 
-## 12. Recommended Next Diligence Actions
+## 13. Recommended Next Diligence Actions
 
 {action_lines}
 
 ---
 
-## 13. Strategy Synthesis
+## 14. Strategy Synthesis
 
 {strategy_lines}
 
@@ -318,6 +328,39 @@ Key evidence gaps that increase model uncertainty:
 *All data is demo/mock. Not for investment decisions.*
 """
     return memo
+
+
+def _format_signal_intelligence(signal: dict) -> str:
+    if not signal:
+        return "- Signal intelligence layer not available for this candidate."
+
+    momentum = signal.get("momentum", {})
+    alpha = "\n".join(f"- {item}" for item in signal.get("alpha_supporting", [])[:3]) or "- No dominant alpha-supporting signal."
+    warnings = "\n".join(f"- {item}" for item in signal.get("warning_signals", [])[:3]) or "- No dominant warning signal."
+    questions = "\n".join(f"- {item}" for item in signal.get("diligence_questions", [])[:4]) or "- No additional diligence question."
+
+    return f"""**Signal Regime:** {signal.get('signal_regime', 'Needs Diligence')}
+
+| Signal | Velocity | Acceleration | Direction |
+|--------|----------|--------------|-----------|
+| Publication | {momentum.get('publication', {}).get('velocity', 0):.1f} | {momentum.get('publication', {}).get('acceleration', 0):.1f} | {momentum.get('publication', {}).get('direction', 'flat')} |
+| Trial | {momentum.get('trial', {}).get('velocity', 0):.1f} | {momentum.get('trial', {}).get('acceleration', 0):.1f} | {momentum.get('trial', {}).get('direction', 'flat')} |
+| Regulatory | {momentum.get('regulatory', {}).get('velocity', 0):.1f} | {momentum.get('regulatory', {}).get('acceleration', 0):.1f} | {momentum.get('regulatory', {}).get('direction', 'flat')} |
+| Patent / Conference | {momentum.get('patent_conference', {}).get('velocity', 0):.1f} | {momentum.get('patent_conference', {}).get('acceleration', 0):.1f} | {momentum.get('patent_conference', {}).get('direction', 'flat')} |
+
+- **Evidence Agreement:** {signal.get('evidence_agreement', 0):.1f}%
+- **Contradiction Burden:** {signal.get('contradiction_burden', 0):.1f}%
+- **Missing Data Burden:** {signal.get('missing_data_burden', 0):.1f}%
+- **Most Disputed Claim:** {signal.get('most_disputed_claim', 'N/A')}
+
+**Signals supporting alpha**
+{alpha}
+
+**Signals warning against pursuit**
+{warnings}
+
+**Next diligence questions**
+{questions}"""
 
 
 def _format_assumption_changes(assumptions: dict) -> str:
