@@ -1,8 +1,97 @@
 """
 Diligence memo generator — produces a structured markdown diligence memo.
+Nemotron (NVIDIA) writes the narrative sections when NVIDIA_API_KEY is set;
+falls back to static template strings otherwise.
 """
 
+import json
 from datetime import date
+
+try:
+    from src import nvidia_client as _nvidia_client
+except ImportError:
+    _nvidia_client = None
+
+
+def _nemotron_sections(
+    candidate: dict,
+    scores: dict,
+    simulation: dict,
+    hmm: dict,
+    bionemo: dict,
+    agents: dict,
+) -> dict | None:
+    """Ask Nemotron to write three narrative blocks. Returns dict or None."""
+    if _nvidia_client is None or not _nvidia_client.api_available():
+        return None
+
+    context = {
+        "candidate": {
+            "name": candidate.get("full_name", ""),
+            "indication": candidate.get("indication", ""),
+            "target": candidate.get("target", ""),
+            "adc_thesis": candidate.get("adc_design_thesis", ""),
+            "why_now": candidate.get("why_now", ""),
+            "main_risk": candidate.get("main_risk", ""),
+        },
+        "scores": {k: round(v, 1) for k, v in scores.items()},
+        "simulation": {
+            "p10": round(simulation.get("p10", 0), 1),
+            "p50": round(simulation.get("p50", 0), 1),
+            "p90": round(simulation.get("p90", 0), 1),
+            "p_threshold_pct": round(simulation.get("p_threshold", 0), 1),
+        },
+        "hmm": {
+            "current_state": hmm.get("current_state", ""),
+            "next_state": hmm.get("next_state", ""),
+        },
+        "bionemo": {
+            "overall_plausibility_pct": round(bionemo.get("overall_plausibility", 0) * 100, 1),
+            "druggability_score_pct": round(bionemo.get("druggability_score", 0) * 100, 1),
+            "pathway_proximity_pct": round(bionemo.get("pathway_proximity", 0) * 100, 1),
+            "cross_reactivity_risk": bionemo.get("cross_reactivity_risk", ""),
+        },
+        "agent_findings": {
+            name: data.get("findings", [])[:3]
+            for name, data in agents.items()
+        },
+    }
+
+    system_prompt = (
+        "You are a pharma commercial-development diligence analyst. "
+        "Be precise, hedged, and evidence-grounded. "
+        "Do NOT invent data — only use the numbers and findings provided. "
+        "Make no go/no-go calls."
+    )
+    user_prompt = (
+        "Based on this structured ADC diligence data, write three narrative sections. "
+        "Return ONLY valid JSON with exactly these three string keys:\n"
+        "- executive_narrative: one concise paragraph summarising the opportunity and key uncertainties\n"
+        "- what_would_need_to_be_true: markdown bullet list (3-5 bullets, each starting with '- ') "
+        "of the conditions that would need to hold for this opportunity to succeed\n"
+        "- strategy_synthesis: markdown bullet list (3-5 bullets, each starting with '- ') "
+        "of strategic recommendations grounded in the data\n\n"
+        f"Data:\n{json.dumps(context, indent=2)}"
+    )
+
+    raw = _nvidia_client.nemotron_complete(system_prompt, user_prompt, max_tokens=900)
+    if not raw:
+        return None
+    try:
+        text = raw.strip()
+        # Strip markdown code fences if the model wrapped the JSON
+        if text.startswith("```"):
+            parts = text.split("```")
+            text = parts[1] if len(parts) > 1 else text
+            if text.startswith("json"):
+                text = text[4:]
+        parsed = json.loads(text.strip())
+        required = ("executive_narrative", "what_would_need_to_be_true", "strategy_synthesis")
+        if all(k in parsed for k in required):
+            return parsed
+        return None
+    except (json.JSONDecodeError, KeyError, IndexError):
+        return None
 
 
 def generate_memo(
@@ -17,6 +106,9 @@ def generate_memo(
     today = date.today().strftime("%B %d, %Y")
     cid = candidate["id"]
     name = candidate["full_name"]
+
+    # Attempt Nemotron narrative generation — falls back to template strings if None.
+    nem = _nemotron_sections(candidate, scores, simulation, hmm, bionemo, agents)
 
     readiness  = scores.get("readiness", 0)
     comm_alpha = scores.get("commercial_alpha", 0)
@@ -47,9 +139,6 @@ def generate_memo(
     p90 = simulation.get("p90", 0)
     p_thresh = simulation.get("p_threshold", 0)
 
-    strategy_findings = agents.get("Strategy Agent", {}).get("findings", [])
-    strategy_lines = "\n".join(f"- {f}" for f in strategy_findings)
-
     lit_findings = agents.get("Literature Agent", {}).get("findings", [])[:3]
     lit_lines = "\n".join(f"- {f}" for f in lit_findings)
 
@@ -62,8 +151,30 @@ def generate_memo(
     commercial_findings = agents.get("Commercial Agent", {}).get("findings", [])[:3]
     commercial_lines = "\n".join(f"- {f}" for f in commercial_findings)
 
-    what_true = candidate.get("what_would_need_to_be_true", "See candidate profile.")
+    what_true = (
+        nem["what_would_need_to_be_true"]
+        if nem
+        else candidate.get("what_would_need_to_be_true", "See candidate profile.")
+    )
     main_risk = candidate.get("main_risk", "See candidate profile.")
+
+    strategy_lines = (
+        nem["strategy_synthesis"]
+        if nem
+        else "\n".join(f"- {f}" for f in agents.get("Strategy Agent", {}).get("findings", []))
+    )
+
+    # Executive narrative paragraph — only present when Nemotron succeeded.
+    executive_narrative_block = f"\n\n{nem['executive_narrative']}" if nem else ""
+
+    # BioNeMo section label — show real accession when ESM-2 was actually called.
+    is_real = bionemo.get("_real_esm2", False)
+    accession = bionemo.get("_accession", "")
+    bionemo_label = (
+        f"*Live BioNeMo (ESM-2) — {accession}*"
+        if is_real
+        else "*Mocked for demo — API-ready for live BioNeMo integration.*"
+    )
 
     changed_lines = _format_assumption_changes(assumptions)
 
@@ -98,7 +209,7 @@ def generate_memo(
 
 **Main Risk:** {main_risk}
 
-**Overall Assessment:** {candidate.get('diligence_status', 'In Review')}
+**Overall Assessment:** {candidate.get('diligence_status', 'In Review')}{executive_narrative_block}
 
 ---
 
@@ -159,7 +270,7 @@ Key uncertainty drivers: clinical differentiation variance, competitor entry tim
 
 ## 8. BioNeMo Plausibility
 
-*Mocked for demo — API-ready for live BioNeMo integration.*
+{bionemo_label}
 
 - **Overall Plausibility:** {plausibility_pct}%
 - **Pathway Proximity:** {pathway_pct}%

@@ -5,6 +5,12 @@ API-ready: replace _stub_outputs with real BioNeMo API calls when credentials ar
 
 from src.utils import blend, clamp
 
+_ALPHAFOLD_URLS = {
+    "b7h4_tnbc":          "https://alphafold.ebi.ac.uk/files/AF-Q7Z7D3-F1-model_v6.pdb",
+    "tf_cervical":        "https://alphafold.ebi.ac.uk/files/AF-P13726-F1-model_v6.pdb",
+    "nectin4_expansion":  "https://alphafold.ebi.ac.uk/files/AF-Q96NY8-F1-model_v6.pdb",
+}
+
 _STUB_DATA = {
     "b7h4_tnbc": {
         "pathway_proximity":         0.71,
@@ -84,6 +90,7 @@ _STUB_DATA = {
 
 def run_bionemo_plausibility(candidate_id: str, base_scores: dict, assumptions: dict) -> dict:
     data = dict(_STUB_DATA.get(candidate_id, _STUB_DATA["tf_cervical"]))
+    data["pdb_url"] = _ALPHAFOLD_URLS.get(candidate_id, _ALPHAFOLD_URLS["tf_cervical"])
 
     ts_adj = assumptions.get("target_selectivity", 50) / 100.0
     bc_adj = assumptions.get("biomarker_confidence", 50) / 100.0

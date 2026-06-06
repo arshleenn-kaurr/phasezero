@@ -145,6 +145,7 @@ export interface BioNemo {
   summary: string;
   cross_reactivity_risk: string;
   payload_compatibility: string;
+  pdb_url?: string;
 }
 
 export interface AgentView {

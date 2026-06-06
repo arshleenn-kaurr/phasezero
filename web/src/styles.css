@@ -76,9 +76,9 @@
   --pz-warning: #D8B75A;
   --pz-danger: #FF6B4A;
 
-  --font-serif: Georgia, "Times New Roman", serif;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-serif: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: "SF Mono", "Cascadia Code", "Consolas", ui-monospace, monospace;
 
   --background: oklch(0.18 0.012 160);
   --foreground: oklch(0.94 0.02 80);
@@ -208,4 +208,28 @@
     50% { opacity: 0.35; }
   }
   .pz-blink { animation: pz-blink 2.4s ease-in-out infinite; }
+
+  @keyframes pz-orbit {
+    from { transform: rotateX(80deg) rotate(0deg); }
+    to   { transform: rotateX(80deg) rotate(360deg); }
+  }
+  @keyframes pz-orbit-reverse {
+    from { transform: rotateX(80deg) rotate(0deg); }
+    to   { transform: rotateX(80deg) rotate(-360deg); }
+  }
+  .pz-orbit       { animation: pz-orbit         8s linear infinite; }
+  .pz-orbit-med   { animation: pz-orbit        12s linear infinite reverse; }
+  .pz-orbit-outer { animation: pz-orbit        16s linear infinite; }
+
+  @keyframes spotlight {
+    0%   { opacity: 0; transform: translate(-72%, -62%) skewX(-23deg) skewY(-27deg) scaleX(0.5); }
+    100% { opacity: 1; transform: translate(-72%, -62%) skewX(-23deg) skewY(-27deg) scaleX(1); }
+  }
+  .animate-spotlight { animation: spotlight 2s ease 0.75s 1 forwards; }
+
+  @keyframes pz-float {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-12px); }
+  }
+  .pz-float { animation: pz-float 6s ease-in-out infinite; }
 }

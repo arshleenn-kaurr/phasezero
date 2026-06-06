@@ -1,6 +1,12 @@
 import { useState, useRef } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, ArrowUpRight, Search, TrendingUp } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Search, TrendingUp, Crosshair, FlaskConical, BarChart3, Microscope } from "lucide-react";
+import { ContainerScroll } from "@/components/ui/container-scroll-animation";
+import MoleculeHero from "./MoleculeHero";
+import ShaderBackground from "@/components/ui/shader-background";
+import { FloatingPaths } from "@/components/ui/background-paths";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 // ---------------------------------------------------------------------------
 // Brand mark
@@ -191,96 +197,101 @@ function matchesQuery(opp: Opp, q: string): boolean {
 // Opportunity row
 // ---------------------------------------------------------------------------
 
+const OPP_ICONS: Record<string, React.ReactNode> = {
+  ADC: <FlaskConical size={20} />,
+  default: <Crosshair size={20} />,
+};
+
 function OpportunityRow({ opp, idx }: { opp: Opp; idx: number }) {
-  const inner = (
-    <div className="group relative -mx-8 lg:-mx-14 px-8 lg:px-14 border-t pz-border py-8 hover:bg-[rgba(168,201,121,0.025)] transition-colors cursor-pointer">
-      <div className="grid grid-cols-[32px_1fr] lg:grid-cols-[32px_1fr_auto] gap-x-6 lg:gap-x-10 items-start">
-        {/* Rank */}
-        <div className="font-mono-pz text-[10px] tracking-[0.18em] text-pz-muted pt-2 select-none">
-          {String(idx + 1).padStart(2, "0")}
-        </div>
+  const icon = OPP_ICONS[opp.modality] ?? OPP_ICONS.default;
+  const detailTo = opp.isResearch
+    ? { to: "/research" as const, search: { q: opp.researchQuery ?? opp.name } }
+    : { to: "/opportunities/$id" as const, params: { id: opp.id } };
 
-        {/* Main content */}
-        <div className="min-w-0">
-          <h3 className="font-serif-display text-[26px] md:text-[30px] leading-none text-pz-text group-hover:text-pz-accent transition-colors">
-            {opp.name}
-          </h3>
-          <div className="mt-2.5 font-mono-pz text-[9px] tracking-[0.18em] uppercase text-pz-muted">
-            {opp.target} · {opp.modality} · {opp.indication}
-          </div>
-          <p className="mt-3.5 text-[13.5px] leading-relaxed text-pz-soft font-light max-w-2xl">
-            {opp.whySurfaced}
-          </p>
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <span
-              className="inline-flex items-center gap-1.5 rounded-sm border px-3 py-1 font-mono-pz text-[9px] tracking-[0.16em] uppercase"
-              style={{ borderColor: `${opp.scoreColor}44`, color: opp.scoreColor }}
-            >
-              <span
-                className="h-1.5 w-1.5 rounded-full shrink-0"
-                style={{ background: opp.scoreColor }}
-              />
-              {opp.action}
-            </span>
-            <span className="flex items-center gap-1.5 font-mono-pz text-[9px] tracking-[0.14em] text-pz-muted">
-              <TrendingUp size={9} className="text-pz-accent" />
-              <span className="text-pz-accent">+{opp.evidenceDelta}</span>
-              {" "}this week
-            </span>
-          </div>
-        </div>
-
-        {/* Score — hidden on mobile, shown on lg+ */}
-        <div className="hidden lg:flex items-start gap-4 pt-1 shrink-0">
-          <div className="text-right">
-            <div
-              className="font-serif-display text-[60px] leading-none tabular-nums"
-              style={{ color: opp.scoreColor }}
-            >
-              {opp.priority}
-            </div>
-            <div className="font-mono-pz text-[9px] tracking-[0.16em] uppercase text-pz-muted text-right">
-              / 100
-            </div>
-          </div>
-          <ArrowRight
-            size={15}
-            className="mt-5 text-pz-muted group-hover:text-pz-accent transition-colors shrink-0"
-          />
-        </div>
-      </div>
-
-      {/* Mobile score strip */}
-      <div className="mt-4 flex items-center gap-2 lg:hidden pl-[calc(32px+24px)]">
-        <span
-          className="font-serif-display text-[28px] leading-none"
-          style={{ color: opp.scoreColor }}
-        >
-          {opp.priority}
-        </span>
-        <span className="font-mono-pz text-[9px] tracking-[0.14em] text-pz-muted">/ 100</span>
-        <ArrowRight
-          size={12}
-          className="ml-auto text-pz-muted group-hover:text-pz-accent transition-colors"
-        />
-      </div>
-    </div>
-  );
-
-  if (opp.isResearch) {
-    return (
-      <Link
-        to="/research"
-        search={{ q: opp.researchQuery ?? opp.name }}
-      >
-        {inner}
-      </Link>
-    );
-  }
   return (
-    <Link to="/opportunities/$id" params={{ id: opp.id }}>
-      {inner}
-    </Link>
+    <>
+      <Separator className="bg-[rgba(168,201,121,0.12)]" />
+      <div className="group grid items-center gap-4 px-0 py-5 md:grid-cols-[1fr_2fr_auto]">
+
+        {/* Col 1 — icon + name + category */}
+        <div className="flex items-center gap-3">
+          <span
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-sm border"
+            style={{ borderColor: `${opp.scoreColor}33`, color: opp.scoreColor, background: `${opp.scoreColor}0D` }}
+          >
+            {icon}
+          </span>
+          <div className="flex flex-col gap-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span
+                className="font-mono-pz text-[9px] tracking-[0.2em] uppercase"
+                style={{ color: opp.scoreColor }}
+              >
+                {String(idx + 1).padStart(2, "0")}
+              </span>
+              <h3 className="font-serif-display text-[18px] leading-none text-pz-text group-hover:text-pz-accent transition-colors truncate">
+                {opp.name}
+              </h3>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono-pz text-[9px] tracking-[0.14em] uppercase text-pz-muted">
+                {opp.target} · {opp.modality}
+              </span>
+              <span
+                className="inline-flex items-center gap-1 rounded-sm border px-2 py-0.5 font-mono-pz text-[8px] tracking-[0.12em] uppercase"
+                style={{ borderColor: `${opp.scoreColor}33`, color: opp.scoreColor }}
+              >
+                <span className="h-1 w-1 rounded-full shrink-0" style={{ background: opp.scoreColor }} />
+                {opp.action}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Col 2 — description + delta */}
+        <div>
+          <p className="text-[13px] leading-relaxed text-pz-soft font-light">{opp.whySurfaced}</p>
+          <div className="mt-2 flex items-center gap-1.5 font-mono-pz text-[9px] tracking-[0.12em] text-pz-muted">
+            <TrendingUp size={9} className="text-pz-accent" />
+            <span className="text-pz-accent">+{opp.evidenceDelta} signals</span>
+            <span>this week</span>
+            <span className="mx-2 opacity-30">·</span>
+            <span className="font-serif-display text-[16px] leading-none" style={{ color: opp.scoreColor }}>
+              {opp.priority}
+            </span>
+            <span className="text-pz-muted">/ 100</span>
+          </div>
+        </div>
+
+        {/* Col 3 — CTA */}
+        {opp.isResearch ? (
+          <Link
+            to="/research"
+            search={{ q: opp.researchQuery ?? opp.name }}
+            className="ml-auto flex items-center gap-2 rounded-sm border pz-border px-4 py-2 font-mono-pz text-[9.5px] tracking-[0.18em] uppercase text-pz-muted hover:border-pz-accent hover:text-pz-accent transition-colors whitespace-nowrap"
+          >
+            View Details <ArrowRight size={11} />
+          </Link>
+        ) : (
+          <Link
+            to="/opportunities/$id"
+            params={{ id: opp.id }}
+            className="ml-auto flex items-center gap-2 rounded-sm border pz-border px-4 py-2 font-mono-pz text-[9.5px] tracking-[0.18em] uppercase text-pz-muted hover:border-pz-accent hover:text-pz-accent transition-colors whitespace-nowrap"
+          >
+            View Details <ArrowRight size={11} />
+          </Link>
+        )}
+      </div>
+    </>
+  );
+}
+
+function OpportunityList({ opps }: { opps: Opp[] }) {
+  return (
+    <div className="flex flex-col">
+      {opps.map((opp, idx) => <OpportunityRow key={opp.id} opp={opp} idx={idx} />)}
+      <Separator className="bg-[rgba(168,201,121,0.12)]" />
+    </div>
   );
 }
 
@@ -312,58 +323,74 @@ export default function SearchHome() {
   return (
     <div className="min-h-screen bg-pz-bg text-pz-text flex flex-col">
 
-      {/* ── Top nav ── */}
-      <header className="px-8 lg:px-14 pt-7 flex items-center justify-between shrink-0">
-        <PZLogo scale={0.72} />
-        <nav className="flex items-center gap-5">
+      {/* ── Persistent sidebar trigger — fixed top-left ── */}
+      <div className="fixed top-4 left-4 z-50">
+        <SidebarTrigger className="h-9 w-9 rounded-sm border pz-border bg-pz-bg/80 backdrop-blur-sm text-pz-muted hover:text-pz-accent hover:border-pz-accent transition-colors" />
+      </div>
+
+      {/* ── Full-screen molecule hero ── */}
+      <MoleculeHero />
+
+      {/* ── Bridge: animated wave zone between hero and section header ── */}
+      <div className="relative overflow-hidden bg-pz-bg" style={{ height: "clamp(100px, 14vw, 180px)" }}>
+        <FloatingPaths position={1} opacityScale={5} />
+        <FloatingPaths position={-1} opacityScale={5} />
+      </div>
+
+      {/* ── Animated section: subtle shader behind section header + ContainerScroll (no path clutter) ── */}
+      <div className="relative">
+        {/* Shader canvas embedded here — visible because it's inside this div, not fighting solid fixed bg */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <ShaderBackground />
+        </div>
+
+        {/* Section header */}
+        <div className="relative z-10 px-8 lg:px-14 pt-4 pb-4 flex items-center justify-between">
+          <div>
+            <div className="font-mono-pz text-[9.5px] tracking-[0.34em] uppercase text-pz-accent">
+              Today's Opportunity Brief
+            </div>
+            <h2 className="mt-2 font-serif-display text-[28px] leading-tight text-pz-text">
+              Plausible ADC targets, ranked by signal.
+            </h2>
+          </div>
           <Link
             to="/opportunities"
-            className="font-mono-pz text-[10px] tracking-[0.2em] uppercase text-pz-muted hover:text-pz-accent transition-colors flex items-center gap-1.5"
+            className="hidden lg:flex items-center gap-1.5 font-mono-pz text-[9.5px] tracking-[0.2em] uppercase text-pz-muted hover:text-pz-accent transition-colors"
           >
             All Opportunities <ArrowUpRight size={10} />
           </Link>
-          <button
-            onClick={focusSearch}
-            aria-label="Search"
-            className="text-pz-muted hover:text-pz-accent transition-colors"
-          >
-            <Search size={15} />
-          </button>
-        </nav>
-      </header>
-
-      {/* ── Hero ── */}
-      <section className="px-8 lg:px-14 pt-16 pb-14">
-        <div className="max-w-3xl">
-          <div className="font-mono-pz text-[9.5px] tracking-[0.34em] uppercase text-pz-accent">
-            Today's Opportunity Brief
-          </div>
-          <h1 className="mt-4 font-serif-display text-[50px] md:text-[66px] leading-[0.92] font-normal">
-            Therapeutic alpha,
-            <br />
-            <em className="italic text-pz-accent font-normal">before consensus forms.</em>
-          </h1>
-          <p className="mt-5 text-[14px] leading-relaxed text-pz-soft font-light max-w-xl">
-            PhaseZero monitors biomedical, clinical, regulatory, and commercial signals to surface
-            drug-development opportunities before they become obvious.
-          </p>
-          <div className="mt-7 flex flex-wrap items-center gap-4">
-            <Link
-              to="/opportunities/$id"
-              params={{ id: "tf-adc" }}
-              className="flex items-center gap-2.5 border border-[color:var(--pz-border-strong)] rounded-sm px-5 py-2.5 font-mono-pz text-[10px] tracking-[0.2em] uppercase text-pz-text hover:border-pz-accent hover:text-pz-accent transition-colors"
-            >
-              Review Top Opportunity <ArrowRight size={11} />
-            </Link>
-            <button
-              onClick={focusSearch}
-              className="flex items-center gap-2 font-mono-pz text-[10px] tracking-[0.2em] uppercase text-pz-muted hover:text-pz-soft transition-colors"
-            >
-              Search Evidence <Search size={11} />
-            </button>
-          </div>
         </div>
-      </section>
+
+        {/* ContainerScroll inside the animated zone */}
+        <div className="relative z-10">
+      <ContainerScroll
+        titleComponent={
+          <div className="mb-6">
+            <div className="font-mono-pz text-[9.5px] tracking-[0.34em] uppercase text-pz-accent mb-4">
+              Intelligence Platform
+            </div>
+            <h2 className="font-serif-display text-[40px] md:text-[58px] leading-[0.92] text-pz-text">
+              Signal to decision,
+              <br />
+              <em className="italic text-pz-accent font-normal">at machine speed.</em>
+            </h2>
+            <p className="mt-4 text-[13.5px] font-light text-pz-soft max-w-xl mx-auto">
+              Eight autonomous agents continuously monitor biomedical literature, clinical trials,
+              regulatory filings, and commercial data — surfacing ranked opportunities in real time.
+            </p>
+          </div>
+        }
+      >
+        <img
+          src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1400&q=80&fit=crop"
+          alt="PhaseZero analytics dashboard"
+          className="mx-auto rounded-2xl object-cover h-full w-full object-top"
+          draggable={false}
+        />
+      </ContainerScroll>
+        </div>{/* end relative z-10 ContainerScroll wrapper */}
+      </div>{/* end animated gap section */}
 
       {/* ── Compact search ── */}
       <section className="px-8 lg:px-14 pb-10">
@@ -434,12 +461,7 @@ export default function SearchHome() {
             </button>
           </div>
         ) : (
-          <div>
-            {visibleOpps.map((opp, idx) => (
-              <OpportunityRow key={opp.id} opp={opp} idx={idx} />
-            ))}
-            <div className="border-t pz-border" />
-          </div>
+          <OpportunityList opps={visibleOpps} />
         )}
       </section>
 
