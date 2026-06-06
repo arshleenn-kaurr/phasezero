@@ -1,5 +1,5 @@
 from src.agents import run_all_agents
-from src.bionemo_stub import run_bionemo_plausibility
+from src.bionemo_real import run_bionemo_plausibility
 from src.evidence_graph import build_evidence_graph, rank_candidates_by_evidence_similarity, summarize_evidence_graph
 from src.hmm_model import run_hmm
 from src.memo import generate_memo

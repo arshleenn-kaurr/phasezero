@@ -12,6 +12,13 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+# Load .env from the backend directory if python-dotenv is available.
+try:
+    from dotenv import load_dotenv as _load_dotenv
+    _load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+except ImportError:
+    pass
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.services.research_service import run_research
@@ -341,6 +348,7 @@ def _bionemo_view(bionemo: dict) -> dict:
     view["summary"] = bionemo.get("summary", "")
     view["cross_reactivity_risk"] = bionemo.get("cross_reactivity_risk", "")
     view["payload_compatibility"] = bionemo.get("payload_compatibility", "")
+    view["pdb_url"] = bionemo.get("pdb_url", "")
     return view
 
 

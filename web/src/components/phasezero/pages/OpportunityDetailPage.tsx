@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
+import { useState } from "react";
 import AppLayout from "../AppLayout";
-import ProteinViewer from "@/components/ProteinViewer";
+import ProteinViewer, { type ProteinViewerMode } from "@/components/ProteinViewer";
 import Markdown from "../Markdown";
 import { Gauge, Histogram, Stat, Tornado } from "../charts";
 import {
@@ -42,8 +43,12 @@ export default function OpportunityDetailPage({ id }: { id: string }) {
   );
 }
 
+const MODES: ProteinViewerMode[] = ["cartoon", "surface", "both"];
+
 function Detail({ d }: { d: CandidateDetail }) {
   const color = statusHex(d.status_color);
+  const [viewMode, setViewMode] = useState<ProteinViewerMode>("cartoon");
+
   return (
     <div className="mt-5 flex flex-col gap-5">
       {/* Header */}
@@ -64,8 +69,31 @@ function Detail({ d }: { d: CandidateDetail }) {
               {d.patient_subgroup}
             </p>
           </div>
-          <div className="w-full max-w-[360px] mx-auto">
-            <ProteinViewer pdbId="1STP" height={300} mode="both" />
+          <div className="w-full max-w-[360px] mx-auto flex flex-col gap-2">
+            <ProteinViewer
+              pdbUrl={d.bionemo.pdb_url || undefined}
+              pdbId={d.target}
+              height={300}
+              mode={viewMode}
+            />
+            <div className="flex gap-1 justify-center">
+              {MODES.map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setViewMode(m)}
+                  className={`font-mono-pz text-[9px] tracking-[0.18em] uppercase px-2.5 py-1 border transition-colors ${
+                    viewMode === m
+                      ? "border-pz-accent text-pz-accent"
+                      : "border-pz-border text-pz-muted hover:text-pz-soft hover:border-pz-soft"
+                  }`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+            <div className="text-center font-mono-pz text-[8.5px] tracking-[0.16em] uppercase text-pz-muted">
+              AlphaFold v6 · UniProt {d.target}
+            </div>
           </div>
         </div>
       </Panel>
