@@ -135,7 +135,7 @@ export default function MoleculeHero() {
           <img
             src={pzLogo}
             alt="PhaseZero"
-            className="h-6 w-auto"
+            className="h-9 w-auto"
             style={{ filter: "invert(1) hue-rotate(180deg) brightness(1.6) saturate(1.1)" }}
           />
           <Link

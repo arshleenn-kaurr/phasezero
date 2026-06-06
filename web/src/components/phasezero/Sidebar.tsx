@@ -48,7 +48,7 @@ export default function AppSidebar() {
           <img
             src={pzLogo}
             alt="PhaseZero"
-            className="h-7 w-auto"
+            className="h-10 w-auto"
             style={{ filter: "invert(1) hue-rotate(180deg) brightness(1.6) saturate(1.1)" }}
           />
         </Link>

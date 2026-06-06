@@ -565,7 +565,7 @@ export default function SearchHome() {
           <img
             src={pzLogo}
             alt="PhaseZero"
-            className="h-5 w-auto opacity-60"
+            className="h-8 w-auto opacity-70"
             style={{ filter: "invert(1) hue-rotate(180deg) brightness(1.6) saturate(1.1)" }}
           />
         </div>
