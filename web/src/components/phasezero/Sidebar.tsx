@@ -44,11 +44,11 @@ export default function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="px-5 py-0">
-        <Link to="/" className="block px-2">
+        <Link to="/" className="block px-0">
           <img
             src={pzLogo}
             alt="PhaseZero"
-            className="h-48 w-auto max-w-[340px] -my-16"
+            className="h-48 w-auto max-w-[340px] -my-16 -ml-12"
             style={{ filter: "invert(1) hue-rotate(180deg) brightness(2.2) saturate(1.2)" }}
           />
         </Link>
