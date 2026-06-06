@@ -109,6 +109,30 @@ export function ErrorPanel({
   );
 }
 
+export function Stat({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: number | string;
+  color?: string;
+}) {
+  return (
+    <div>
+      <div
+        className="font-serif-display text-[28px] leading-none"
+        style={color ? { color } : undefined}
+      >
+        {value}
+      </div>
+      <div className="mt-1 font-mono-pz text-[8.5px] tracking-[0.16em] uppercase text-pz-muted">
+        {label}
+      </div>
+    </div>
+  );
+}
+
 export function PageHeader({
   eyebrow,
   title,

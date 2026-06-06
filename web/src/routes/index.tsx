@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import SearchHome from "@/components/phasezero/SearchHome";
+import AppSidebar from "@/components/phasezero/Sidebar";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -21,5 +23,12 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  return <SearchHome />;
+  return (
+    <SidebarProvider defaultOpen={false}>
+      <AppSidebar />
+      <SidebarInset className="bg-pz-bg text-pz-text">
+        <SearchHome />
+      </SidebarInset>
+    </SidebarProvider>
+  );
 }
