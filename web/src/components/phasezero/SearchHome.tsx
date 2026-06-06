@@ -8,6 +8,7 @@ import { FloatingPaths } from "@/components/ui/background-paths";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import phasezeroDashboard from "@/assets/phasezero-dashboard.png";
+import pzLogo from "@/assets/phasezero-logo.png";
 
 // ---------------------------------------------------------------------------
 // Brand mark
@@ -235,7 +236,7 @@ function OpportunityRow({ opp, idx }: { opp: Opp; idx: number }) {
               </h3>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono-pz text-[9px] tracking-[0.14em] uppercase text-pz-muted">
+              <span className="font-mono-pz text-[10px] tracking-[0.14em] uppercase text-pz-muted">
                 {opp.target} · {opp.modality}
               </span>
               <span
@@ -252,8 +253,8 @@ function OpportunityRow({ opp, idx }: { opp: Opp; idx: number }) {
         {/* Col 2 — description + delta */}
         <div>
           <p className="text-[13px] leading-relaxed text-pz-soft font-light">{opp.whySurfaced}</p>
-          <div className="mt-2 flex items-center gap-1.5 font-mono-pz text-[9px] tracking-[0.12em] text-pz-muted">
-            <TrendingUp size={9} className="text-pz-accent" />
+          <div className="mt-2 flex items-center gap-1.5 font-mono-pz text-[10px] tracking-[0.12em] text-pz-muted">
+            <TrendingUp size={10} className="text-pz-accent" />
             <span className="text-pz-accent">+{opp.evidenceDelta} signals</span>
             <span>this week</span>
             <span className="mx-2 opacity-30">·</span>
@@ -437,11 +438,19 @@ export default function SearchHome() {
 
       {/* ── Opportunity Queue ── */}
       <section className="px-8 lg:px-14 pb-16 flex-1">
+        {/* Explore hint banner */}
+        <div className="mb-5 flex items-center gap-3 rounded-sm border pz-border bg-[rgba(168,201,121,0.04)] px-4 py-3">
+          <span className="h-1.5 w-1.5 rounded-full bg-pz-accent shrink-0 pz-pulse" />
+          <p className="text-[13px] text-pz-soft font-light flex-1">
+            Click <span className="text-pz-accent font-medium">View Details</span> on any target below to open the full diligence suite — clinical simulations, regulatory pathway, market sizing, and BD analysis.
+          </p>
+        </div>
+
         <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-          <span className="font-mono-pz text-[10px] tracking-[0.24em] uppercase text-pz-muted">
+          <span className="font-mono-pz text-[11px] tracking-[0.24em] uppercase text-pz-muted">
             Active Opportunities
           </span>
-          <span className="font-mono-pz text-[9px] tracking-[0.16em] uppercase text-pz-accent">
+          <span className="font-mono-pz text-[10px] tracking-[0.16em] uppercase text-pz-accent">
             {visibleOpps.length} surfaced
           </span>
           {trimmed && (
@@ -553,9 +562,12 @@ export default function SearchHome() {
               </div>
             ))}
           </div>
-          <div className="font-mono-pz text-[9px] tracking-[0.16em] uppercase text-pz-muted">
-            PhaseZero · Scientific Intelligence
-          </div>
+          <img
+            src={pzLogo}
+            alt="PhaseZero"
+            className="h-5 w-auto opacity-60"
+            style={{ filter: "invert(1) hue-rotate(180deg) brightness(1.6) saturate(1.1)" }}
+          />
         </div>
       </footer>
     </div>

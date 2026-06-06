@@ -3,6 +3,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { ChevronDown, ArrowRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Spotlight } from "@/components/ui/spotlight";
+import pzLogo from "@/assets/phasezero-logo.png";
 
 const ACCENT = "#A8C979";
 const BG = "#080D0F";
@@ -131,9 +132,12 @@ export default function MoleculeHero() {
       >
         {/* Top nav row */}
         <div className="flex items-center justify-between px-8 lg:px-14 pt-7 shrink-0">
-          <div className="font-mono-pz text-[9px] tracking-[0.32em] uppercase text-pz-muted">
-            PhaseZero · ADC Intelligence
-          </div>
+          <img
+            src={pzLogo}
+            alt="PhaseZero"
+            className="h-6 w-auto"
+            style={{ filter: "invert(1) hue-rotate(180deg) brightness(1.6) saturate(1.1)" }}
+          />
           <Link
             to="/opportunities"
             className="font-mono-pz text-[9px] tracking-[0.22em] uppercase text-pz-muted hover:text-pz-accent transition-colors"

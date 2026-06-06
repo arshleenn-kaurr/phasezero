@@ -10,6 +10,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
+import pzLogo from "@/assets/phasezero-logo.png";
 import {
   Sidebar,
   SidebarContent,
@@ -42,16 +43,15 @@ export default function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="px-5 py-7">
-        <div className="flex items-center gap-2 px-2">
-          <span
-            className="font-serif-display text-[15px] text-pz-text"
-            style={{ letterSpacing: "0.28em" }}
-          >
-            PHASEZER
-          </span>
-          <span className="inline-block h-2.5 w-2.5 rounded-full border border-[color:var(--pz-accent)]" />
-        </div>
+      <SidebarHeader className="px-5 py-6">
+        <Link to="/" className="block px-2">
+          <img
+            src={pzLogo}
+            alt="PhaseZero"
+            className="h-7 w-auto"
+            style={{ filter: "invert(1) hue-rotate(180deg) brightness(1.6) saturate(1.1)" }}
+          />
+        </Link>
       </SidebarHeader>
 
       <SidebarContent>
@@ -69,10 +69,10 @@ export default function AppSidebar() {
                           <span className="absolute right-0 top-1/2 h-5 w-[2px] -translate-y-1/2 bg-pz-accent" />
                         )}
                         <Icon
-                          size={14}
+                          size={15}
                           className={isActive ? "text-pz-accent" : "text-pz-muted"}
                         />
-                        <span className="text-[13px] font-light">{item.label}</span>
+                        <span className="text-[14px] font-light">{item.label}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
