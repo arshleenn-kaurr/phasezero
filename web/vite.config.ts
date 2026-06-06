@@ -12,4 +12,7 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Force nitro on with the Vercel preset so `vite build` emits a Vercel-deployable
+  // SSR output (the Lovable config otherwise produces a vite-only build off-sandbox).
+  nitro: { preset: "vercel" },
 });
