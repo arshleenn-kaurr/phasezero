@@ -1,0 +1,85 @@
+{
+  "b7h4_tnbc": {
+    "literature": [
+      {"signal": "B7-H4 protein expression confirmed in 30–45% TNBC tumor samples by IHC", "source": "PMID:32918890", "quality": "medium", "agent": "Literature"},
+      {"signal": "B7-H4 mRNA overexpression correlated with basal-like subtype in TCGA breast cancer dataset", "source": "TCGA BRCA", "quality": "high", "agent": "Literature"},
+      {"signal": "Normal tissue B7-H4 expression restricted primarily to epithelial cells of uterus and kidney", "source": "Human Protein Atlas", "quality": "high", "agent": "Literature"},
+      {"signal": "B7-H4 internalization confirmed upon antibody binding in TNBC cell lines", "source": "Preclinical study 2022", "quality": "medium", "agent": "Literature"},
+      {"signal": "No validated IHC companion diagnostic or prospective biomarker cutoff study published", "source": "Evidence gap", "quality": "low", "agent": "Literature"}
+    ],
+    "trials": [
+      {"signal": "AZD9401 (AZ/FirstBio) Phase I dose escalation ongoing; TNBC cohort active", "source": "NCT05489419", "quality": "high", "agent": "Trial"},
+      {"signal": "SGN-B7H4V (Seagen/Pfizer) Phase I in TNBC and other B7-H4+ tumors", "source": "NCT05103462", "quality": "high", "agent": "Trial"},
+      {"signal": "2 additional preclinical B7-H4 ADC programs from mid-size biotechs advancing toward IND", "source": "Conference abstracts 2023", "quality": "medium", "agent": "Trial"},
+      {"signal": "Sacituzumab govitecan (Trodelvy) approved TNBC 2L+ — sets clinical bar", "source": "FDA approval 2021", "quality": "high", "agent": "Trial"},
+      {"signal": "TDXd DESTINY-Breast04/06 approved HER2-low/ultralow BC — further narrows unselected TNBC population", "source": "NEJM 2022", "quality": "high", "agent": "Trial"}
+    ],
+    "regulatory": [
+      {"signal": "TNBC accelerated approval via ORR endpoint is established precedent (SG)", "source": "FDA label", "quality": "high", "agent": "Regulatory"},
+      {"signal": "Biomarker-defined subgroup approval adds companion diagnostic requirement and development complexity", "source": "FDA guidance", "quality": "medium", "agent": "Regulatory"},
+      {"signal": "No B7-H4 companion diagnostic cleared; IHC assay development adds 18–24 months", "source": "Evidence gap", "quality": "low", "agent": "Regulatory"}
+    ],
+    "commercial": [
+      {"signal": "TNBC US incidence ~45,000/year; B7-H4+ subgroup est. 13,500–18,000 patients", "source": "SEER + literature estimate", "quality": "medium", "agent": "Commercial"},
+      {"signal": "SG 2L+ TNBC market ~$800M US revenue (2023); sets pricing floor", "source": "Company reports", "quality": "high", "agent": "Commercial"},
+      {"signal": "High competitive saturation: 2 approved ADCs + 4 B7-H4 programs + multiple other ADC entrants", "source": "Commercial analysis", "quality": "high", "agent": "Commercial"},
+      {"signal": "Payer differentiation requires biomarker-defined label; unselected approval unlikely to achieve premium pricing", "source": "Market access analysis", "quality": "medium", "agent": "Commercial"}
+    ]
+  },
+  "tf_cervical": {
+    "literature": [
+      {"signal": "Tissue Factor expression confirmed in 70–80% cervical cancer tumors by IHC; high H-score", "source": "PMID:28455532", "quality": "high", "agent": "Literature"},
+      {"signal": "TF validated as functional ADC target via tisotumab vedotin preclinical and clinical data", "source": "Innovate 38 trial data", "quality": "high", "agent": "Literature"},
+      {"signal": "TF surface expression retained in recurrent/platinum-resistant disease", "source": "Tumor biopsy studies", "quality": "medium", "agent": "Literature"},
+      {"signal": "TF internalization kinetics characterized; MMAE payload compatible with TF biology", "source": "Mechanistic studies", "quality": "high", "agent": "Literature"},
+      {"signal": "Normal tissue TF expression on vascular endothelium drives ocular and bleeding toxicity signal", "source": "TV clinical data", "quality": "high", "agent": "Literature"}
+    ],
+    "trials": [
+      {"signal": "Tisotumab vedotin (Tivdak) FDA approved September 2021 for recurrent cervical cancer 2L+", "source": "FDA approval", "quality": "high", "agent": "Trial"},
+      {"signal": "InnovaTV 204: TV ORR 24%, mDOR 8.3 months in heavily pretreated cervical cancer", "source": "JCO 2022", "quality": "high", "agent": "Trial"},
+      {"signal": "InnovaTV 301: TV vs chemotherapy OS benefit confirmed (mOS 11.5 vs 9.5 months)", "source": "ESMO 2023", "quality": "high", "agent": "Trial"},
+      {"signal": "TV+pembrolizumab Phase III (InnovaTV 205) ongoing in 1L cervical", "source": "NCT03786081", "quality": "high", "agent": "Trial"},
+      {"signal": "2 next-generation TF ADC programs (non-MMAE payloads) in IND/Phase I stage", "source": "Conference abstracts", "quality": "medium", "agent": "Trial"}
+    ],
+    "regulatory": [
+      {"signal": "Accelerated approval via ORR endpoint fully established in cervical cancer (TV precedent)", "source": "FDA label", "quality": "high", "agent": "Regulatory"},
+      {"signal": "Confirmatory trial via OS endpoint feasible and confirmed (InnovaTV 301)", "source": "ESMO 2023", "quality": "high", "agent": "Regulatory"},
+      {"signal": "Differentiated safety profile vs TV (reduced ocular/bleeding) likely accepted as label differentiation", "source": "FDA guidance oncology", "quality": "medium", "agent": "Regulatory"},
+      {"signal": "No CDx requirement for TF ADC — expression broadly high in indication", "source": "TV label", "quality": "high", "agent": "Regulatory"}
+    ],
+    "commercial": [
+      {"signal": "Recurrent/metastatic cervical cancer US ~13,000 eligible patients/year at target line", "source": "SEER + treatment algorithm", "quality": "high", "agent": "Commercial"},
+      {"signal": "High unmet need: limited options post-platinum + pembrolizumab; no strong 3L+ standard of care", "source": "Clinical guidelines", "quality": "high", "agent": "Commercial"},
+      {"signal": "TV pricing ~$15,000/month; market ~$400M US revenue (2023) — growing rapidly", "source": "Company reports", "quality": "high", "agent": "Commercial"},
+      {"signal": "Improved safety profile (reduced ocular/bleeding) is commercially meaningful — TV has significant toxicity management burden", "source": "Real-world TV data", "quality": "medium", "agent": "Commercial"}
+    ]
+  },
+  "nectin4_expansion": {
+    "literature": [
+      {"signal": "Nectin-4 (PVRL4) expression in NSCLC: ~28% IHC 2+/3+ in adenocarcinoma", "source": "PMID:34015602", "quality": "medium", "agent": "Literature"},
+      {"signal": "Nectin-4 expression in TNBC: ~32% IHC 2+/3+ with higher rates in basal-like", "source": "PMID:33891782", "quality": "medium", "agent": "Literature"},
+      {"signal": "Nectin-4 expression in gastric cancer: ~25% IHC positive", "source": "PMID:35203748", "quality": "medium", "agent": "Literature"},
+      {"signal": "EV (enfortumab vedotin) mechanism well-characterized: MMAE payload, strong internalization in urothelial", "source": "EFC pharmacology", "quality": "high", "agent": "Literature"},
+      {"signal": "No prospective validation of Nectin-4 IHC as predictive biomarker outside urothelial context", "source": "Evidence gap", "quality": "low", "agent": "Literature"}
+    ],
+    "trials": [
+      {"signal": "Enfortumab vedotin FDA approved urothelial cancer: ORR 44%, mOS 12.9 months in 2L+", "source": "FDA label + EV-301", "quality": "high", "agent": "Trial"},
+      {"signal": "EV basket Phase II trial in Nectin-4+ solid tumors (non-urothelial) enrolling: NSCLC, TNBC, gastric cohorts", "source": "NCT04640477", "quality": "high", "agent": "Trial"},
+      {"signal": "NSCLC EV single-arm Phase II (Astellas/Pfizer) interim ORR ~18% — lower than urothelial", "source": "ASCO 2024 abstract", "quality": "medium", "agent": "Trial"},
+      {"signal": "Multiple companies pursuing Nectin-4 ADC expansion: consensus interest high", "source": "Competitive intelligence", "quality": "high", "agent": "Trial"},
+      {"signal": "EV+pembro EV-302/KEYNOTE-869 approved in 1L urothelial — sets combination bar", "source": "NEJM 2024", "quality": "high", "agent": "Trial"}
+    ],
+    "regulatory": [
+      {"signal": "Basket trial design feasible for Nectin-4+ solid tumors — FDA precedent from larotrectinib/entrectinib", "source": "FDA guidance", "quality": "medium", "agent": "Regulatory"},
+      {"signal": "Tumor-agnostic approval requires strong ORR signal + validated companion diagnostic", "source": "FDA oncology guidance", "quality": "high", "agent": "Regulatory"},
+      {"signal": "Indication-specific Phase III likely required for each tumor type unless basket signal very strong", "source": "FDA guidance", "quality": "medium", "agent": "Regulatory"},
+      {"signal": "EV peripheral neuropathy and hyperglycemia — safety monitoring requirements established", "source": "EV label", "quality": "high", "agent": "Regulatory"}
+    ],
+    "commercial": [
+      {"signal": "NSCLC addressable Nectin-4+ population ~30,000 US/year; TNBC ~14,000; gastric ~10,000", "source": "Epidemiology estimate", "quality": "medium", "agent": "Commercial"},
+      {"signal": "High consensus attention — multiple companies pursuing identical expansion; reduced first-mover advantage", "source": "Commercial intelligence", "quality": "high", "agent": "Commercial"},
+      {"signal": "EV US revenue ~$1.2B (2023) and growing; expansion would significantly expand TAM if signal validates", "source": "Company reports", "quality": "high", "agent": "Commercial"},
+      {"signal": "Biosimilar/biobetter EV competition likely by 2030; window for expansion is 2025–2028 Phase III design", "source": "Patent analysis", "quality": "medium", "agent": "Commercial"}
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "scan_sequence": [
+    {"agent": "Literature Agent", "action": "Extracted B7-H4, TF, and Nectin-4 expression and mechanism evidence from 847 source documents", "duration_ms": 1240, "status": "complete"},
+    {"agent": "Trial Agent", "action": "Mapped 18 active, 4 completed, and 3 discontinued ADC studies across all 3 candidates", "duration_ms": 890, "status": "complete"},
+    {"agent": "Regulatory Agent", "action": "Identified endpoint precedent, label comparators, and accelerated approval pathways", "duration_ms": 720, "status": "complete"},
+    {"agent": "Commercial Agent", "action": "Estimated patient populations, market sizing, and competitive saturation indices", "duration_ms": 1080, "status": "complete"},
+    {"agent": "ADC Design Agent", "action": "Evaluated payload class compatibility, DAR optimization, and linker chemistry fit for each target", "duration_ms": 640, "status": "complete"},
+    {"agent": "Failure Memory Agent", "action": "Cross-referenced 23 prior ADC failure archetypes; flagged 6 active warnings across 3 candidates", "duration_ms": 950, "status": "complete"},
+    {"agent": "BioNeMo Agent", "action": "Ran pathway proximity, druggability, and structure availability checks via BioNeMo plausibility layer", "duration_ms": 1340, "status": "complete"},
+    {"agent": "Strategy Agent", "action": "Synthesized cross-functional thesis and generated diligence memos for all 3 candidates", "duration_ms": 1120, "status": "complete"}
+  ],
+  "total_signals_parsed": 128,
+  "candidates_evaluated": 3,
+  "failure_flags_raised": 10,
+  "missing_data_items": 8,
+  "scan_timestamp": "2026-06-05T14:32:00Z"
+}

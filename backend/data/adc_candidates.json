@@ -1,0 +1,128 @@
+{
+  "candidates": [
+    {
+      "id": "b7h4_tnbc",
+      "name": "B7-H4 ADC",
+      "indication": "Triple-Negative Breast Cancer (TNBC)",
+      "target": "B7-H4 (VTCN1)",
+      "full_name": "B7-H4 ADC in Triple-Negative Breast Cancer",
+      "patient_subgroup": "B7-H4 overexpressing TNBC (~30–40% of patients; SG/HER2-low excluded population)",
+      "adc_design_thesis": "B7-H4 is overexpressed in TNBC with restricted normal tissue expression. Payload class and DAR optimization are critical to achieve a differentiated therapeutic window vs established benchmarks (SG, TDXd).",
+      "why_now": "Recent clinical progress in TNBC ADCs (sacituzumab govitecan, trastuzumab deruxtecan) validated the modality. B7-H4 offers potential differentiation for SG/HER2-low negative patients, but the clinical bar is now significantly elevated.",
+      "what_phasezero_found": "Literature Agent confirmed B7-H4 expression in 30–45% TNBC tumors with low normal tissue signal. Trial Agent mapped 4 active B7-H4 ADC programs (2 Phase I, 2 preclinical). Commercial Agent flagged high competitive saturation with SG approved and multiple entrants. Failure Memory Agent flagged 2 prior broad-trial failures in TNBC ADC space linked to weak enrichment strategy.",
+      "main_risk": "Weak clinical differentiation vs sacituzumab govitecan in unselected TNBC. Biomarker strategy not yet validated prospectively. Crowded market with established players and multiple late-stage programs.",
+      "what_would_need_to_be_true": "B7-H4 IHC biomarker validated prospectively with defined cutoff. Clear PFS delta vs SG in confirmed B7-H4-high subgroup. Payload and DAR optimized for therapeutic index. Phase I safety data differentiated from prior TNBC ADC toxicity profiles.",
+      "recommended_next_actions": [
+        "Commission B7-H4 IHC assay development and analytical validation",
+        "Map SG/TDXd excluded patient population size and treatment sequencing",
+        "ADC design workshop: payload class comparison and DAR optimization",
+        "Clinical differentiation model: what PFS delta is commercially credible?"
+      ],
+      "base_scores": {
+        "target_selectivity": 62,
+        "therapeutic_index": 57,
+        "biomarker_strategy": 42,
+        "clinical_differentiation": 38,
+        "commercial_whitespace": 31,
+        "regulatory_path_clarity": 53,
+        "evidence_quality": 68,
+        "bionemo_plausibility": 70,
+        "unmet_need": 72,
+        "competitive_saturation": 78,
+        "failure_similarity": 73
+      },
+      "failure_flags": [
+        {"flag": "Weak clinical delta risk", "severity": "high", "detail": "SG and TDXd have established strong clinical benchmarks. Differentiation requires validated biomarker subgroup with credible delta."},
+        {"flag": "Crowded market risk", "severity": "high", "detail": "At least 4 active B7-H4 ADC programs. SG approved in TNBC. TDXd approved in HER2-low BC. Market saturation is elevated."},
+        {"flag": "Broad trial / weak enrichment risk", "severity": "medium", "detail": "Prior TNBC ADC broad trials showed weak benefit in unselected population. Prospective enrichment biomarker is critical."},
+        {"flag": "Regulatory path risk", "severity": "low", "detail": "TNBC has established regulatory precedent but biomarker-defined subgroup approval adds complexity and timeline risk."}
+      ],
+      "diligence_status": "Caution — Lower Priority",
+      "diligence_status_color": "amber",
+      "strategic_fit_default": 48,
+      "risk_tolerance_default": 52
+    },
+    {
+      "id": "tf_cervical",
+      "name": "Tissue Factor ADC",
+      "indication": "Recurrent / Metastatic Cervical Cancer",
+      "target": "Tissue Factor (TF / CD142 / F3)",
+      "full_name": "Tissue Factor ADC in Recurrent/Metastatic Cervical Cancer",
+      "patient_subgroup": "Recurrent/metastatic cervical cancer post-platinum + immunotherapy (~13,000 US patients/year at eligible line)",
+      "adc_design_thesis": "Tissue Factor is highly expressed in cervical cancer. Tisotumab vedotin (TV/Tivdak) validated the target and MMAE payload in this indication. Next-generation opportunity: improved therapeutic index addressing TV ocular/bleeding toxicity, or differentiated combination regimens in earlier lines.",
+      "why_now": "TV (Tivdak) approval in recurrent cervical cancer fully de-risks the target, ADC design, and regulatory path. High unmet need persists post-platinum + pembrolizumab. Next-gen TF ADC with improved safety profile has clear differentiation axis and defined patient population.",
+      "what_phasezero_found": "Literature Agent confirmed high TF expression in cervical cancer (70–80% of tumors). Trial Agent mapped TV approval, TV+pembro combination trials, and 2 next-gen TF ADC programs. Regulatory Agent confirmed accelerated approval path precedent via ORR endpoint. Commercial Agent estimated 13,000 addressable US patients. Failure Memory Agent flagged TV ocular/bleeding toxicity profile as primary differentiation target.",
+      "main_risk": "TV already established with strong brand and clinical data. Next-gen must show clear safety/efficacy differentiation or meaningful activity in earlier lines. Cervical cancer indication smaller than TNBC or NSCLC. Lifecycle management from TV franchise is a competitive force.",
+      "what_would_need_to_be_true": "Next-gen TF ADC shows improved ocular/bleeding toxicity profile vs TV with maintained or improved efficacy. Either OS benefit in post-TV patients OR strong ORR in TV-naive/combination setting. Commercial model validated at ~13k US addressable patients per year.",
+      "recommended_next_actions": [
+        "Deep-dive TV clinical data: where does activity fail and why? Post-TV biopsy TF expression?",
+        "Payload/linker screen vs MMAE for improved TI: auristatins vs topoisomerase inhibitors",
+        "Commercial model: post-TV patient population sizing at NDA timing (2030+)",
+        "Combination hypothesis: TF ADC + anti-PD1 in earlier lines — biologic rationale and trial feasibility"
+      ],
+      "base_scores": {
+        "target_selectivity": 80,
+        "therapeutic_index": 72,
+        "biomarker_strategy": 76,
+        "clinical_differentiation": 78,
+        "commercial_whitespace": 68,
+        "regulatory_path_clarity": 83,
+        "evidence_quality": 79,
+        "bionemo_plausibility": 85,
+        "unmet_need": 88,
+        "competitive_saturation": 42,
+        "failure_similarity": 27
+      },
+      "failure_flags": [
+        {"flag": "Target liability risk", "severity": "low", "detail": "TF expression on normal vasculature contributes to ocular and bleeding toxicity seen with TV. Next-gen design must measurably address this."},
+        {"flag": "Crowded market risk", "severity": "medium", "detail": "TV is approved and franchise lifecycle management programs are likely active. Must show clear and credible differentiation axis."},
+        {"flag": "Weak clinical delta risk", "severity": "low", "detail": "TV ORR ~24% in 3L+. Next-gen must show meaningful improvement or validated combination activity."}
+      ],
+      "diligence_status": "High Priority",
+      "diligence_status_color": "green",
+      "strategic_fit_default": 78,
+      "risk_tolerance_default": 68
+    },
+    {
+      "id": "nectin4_expansion",
+      "name": "Nectin-4 ADC Expansion",
+      "indication": "Non-Urothelial Solid Tumors",
+      "target": "Nectin-4 (PVRL4 / CD112R)",
+      "full_name": "Nectin-4 ADC Expansion in Non-Urothelial Solid Tumors",
+      "patient_subgroup": "Nectin-4 high-expressing non-urothelial cancers: NSCLC, TNBC, gastric (~25–35% of each tumor type by IHC 2+/3+)",
+      "adc_design_thesis": "Enfortumab vedotin (EV) validated Nectin-4 ADC in urothelial cancer with strong ORR and OS benefit. Nectin-4 is expressed across multiple solid tumor types. Tumor-agnostic or indication-expansion strategy leverages a validated ADC scaffold with well-characterized pharmacology.",
+      "why_now": "EV approval in urothelial cancer de-risks target biology and ADC design. Expression data exists across NSCLC, TNBC, and gastric cancers. Multiple basket trials actively enrolling. The question is whether clinical benefit translates reliably outside the urothelial context.",
+      "what_phasezero_found": "Literature Agent confirmed Nectin-4 expression in NSCLC (28%), TNBC (32%), gastric (25%) with variable IHC scoring. Trial Agent found 3 active non-urothelial EV expansion cohorts plus 1 Phase II NSCLC trial. Commercial Agent noted high consensus attention and multiple competitors pursuing same expansion strategy. Failure Memory Agent flagged prior pan-tumor ADC expansions with mixed results and enrichment failures.",
+      "main_risk": "High consensus attention reduces hidden alpha — this is now an expected expansion, not a contrarian discovery. Multiple competitors pursuing identical strategy. Expression outside urothelial context may not translate to equivalent clinical benefit. Biomarker cutoff validation critical for enrichment.",
+      "what_would_need_to_be_true": "Nectin-4 expression data in target tumor types validated prospectively with defined IHC cutoff. EV or next-gen ADC shows clinically meaningful ORR signal in at least one non-urothelial expansion cohort in 2024–2026 data. Clear patient selection biomarker defined before Phase III design.",
+      "recommended_next_actions": [
+        "Compile Nectin-4 expression atlas across solid tumor types with IHC scoring normalization",
+        "Analyze EV basket trial interim data: where is signal strongest by tumor type and expression level?",
+        "IHC cutoff analysis: what H-score or 2+/3+ threshold maximizes clinical benefit vs false positive rate?",
+        "Competitive landscape: which companies furthest along in which tumor types? What Phase III designs are filed?"
+      ],
+      "base_scores": {
+        "target_selectivity": 74,
+        "therapeutic_index": 70,
+        "biomarker_strategy": 63,
+        "clinical_differentiation": 60,
+        "commercial_whitespace": 48,
+        "regulatory_path_clarity": 65,
+        "evidence_quality": 79,
+        "bionemo_plausibility": 77,
+        "unmet_need": 70,
+        "competitive_saturation": 68,
+        "failure_similarity": 48
+      },
+      "failure_flags": [
+        {"flag": "Broad trial / weak enrichment risk", "severity": "medium", "detail": "Pan-tumor expansions without validated biomarker cutoff have elevated failure rate. IHC-based selection must be prospectively validated."},
+        {"flag": "Crowded market risk", "severity": "medium", "detail": "High consensus attention. Multiple companies expanding EV/EV-biosimilars into NSCLC/TNBC. Alpha may be partially priced in."},
+        {"flag": "Weak clinical delta risk", "severity": "medium", "detail": "EV context-dependence outside urothelial cancer is uncertain. Tumor microenvironment and drug uptake may differ meaningfully from urothelial setting."}
+      ],
+      "diligence_status": "Selective Priority",
+      "diligence_status_color": "blue",
+      "strategic_fit_default": 62,
+      "risk_tolerance_default": 60
+    }
+  ]
+}

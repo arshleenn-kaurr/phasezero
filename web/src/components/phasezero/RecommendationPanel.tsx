@@ -1,38 +1,39 @@
 import { ArrowRight } from "lucide-react";
+import type {
+  DecisionMemo,
+  FeaturedOpportunity as FeaturedOpportunityData,
+} from "@/lib/api";
 
-const DRIVERS = [
-  "Best-in-class payload differentiation",
-  "Validated internalization mechanism",
-  "Strong translational evidence in cervical",
-  "Large 2L+ addressable population",
-];
-
-const RISKS = [
-  "Potential hematologic toxicity",
-  "Manufacturing complexity at scale",
-  "Competitive landscape evolving",
-];
-
-export default function RecommendationPanel() {
+export default function RecommendationPanel({
+  opportunity,
+  memo,
+}: {
+  opportunity: FeaturedOpportunityData;
+  memo: DecisionMemo;
+}) {
   return (
     <aside className="pz-panel rounded-sm p-6 flex flex-col">
       <div className="font-mono-pz text-[10px] tracking-[0.22em] uppercase text-pz-muted">
         Recommendation
       </div>
       <div className="mt-1 font-mono-pz text-[12px] tracking-[0.22em] uppercase text-pz-accent">
-        Advance · High Conviction
+        {`${opportunity.recommendation} · ${opportunity.confidence}`}
       </div>
 
       <div className="mt-4 flex items-baseline gap-1">
-        <span className="font-serif-display text-[64px] leading-none text-pz-text">86</span>
+        <span className="font-serif-display text-[64px] leading-none text-pz-text">
+          {opportunity.score}
+        </span>
         <span className="font-mono-pz text-[12px] text-pz-muted">/100</span>
       </div>
-      <div className="mt-1 text-[12.5px] text-pz-soft font-light">High Conviction</div>
+      <div className="mt-1 text-[12.5px] text-pz-soft font-light">
+        {opportunity.confidence}
+      </div>
 
       <Sparkline />
 
-      <Section title="Key Drivers" items={DRIVERS} markClass="text-pz-accent" mark="●" />
-      <Section title="Key Risks" items={RISKS} markClass="text-pz-warning" mark="▲" />
+      <Section title="Key Drivers" items={memo.key_reasons} markClass="text-pz-accent" mark="●" />
+      <Section title="Key Risks" items={memo.key_risks} markClass="text-pz-warning" mark="▲" />
 
       <button className="mt-5 pt-4 border-t pz-border flex items-center gap-2 text-pz-accent font-mono-pz text-[10.5px] tracking-[0.18em] uppercase hover:text-pz-text transition-colors w-fit">
         View Full Analysis <ArrowRight size={12} />

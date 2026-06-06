@@ -1,13 +1,30 @@
+import { useState } from "react";
 import { Star, ArrowRight } from "lucide-react";
-import protein from "@/assets/protein.jpg";
+import type { FeaturedOpportunity as FeaturedOpportunityData } from "@/lib/api";
+import ProteinViewer, { type ProteinViewerMode } from "@/components/ProteinViewer";
 
-const META = [
-  { k: "Therapeutic Area", v: "Oncology" },
-  { k: "Modality", v: "ADC" },
-  { k: "Development Stage", v: "IND-Enabling" },
-];
+export default function FeaturedOpportunity({
+  opportunity,
+}: {
+  opportunity: FeaturedOpportunityData;
+}) {
+  const meta = [
+    { k: "Therapeutic Area", v: "Oncology" },
+    { k: "Modality", v: opportunity.modality },
+    { k: "Diligence Status", v: opportunity.stage },
+  ];
 
-export default function FeaturedOpportunity() {
+  const [cartoonOn, setCartoonOn] = useState(true);
+  const [surfaceOn, setSurfaceOn] = useState(false);
+  const mode: ProteinViewerMode =
+    cartoonOn && surfaceOn
+      ? "both"
+      : cartoonOn
+        ? "cartoon"
+        : surfaceOn
+          ? "surface"
+          : "cartoon";
+
   return (
     <section className="relative pz-panel rounded-sm p-7 overflow-hidden">
       <CornerBrackets />
@@ -25,10 +42,10 @@ export default function FeaturedOpportunity() {
           </div>
 
           <h2 className="mt-5 font-serif-display text-[52px] leading-none text-pz-text font-normal">
-            PZ-1092
+            {opportunity.id}
           </h2>
           <div className="mt-2 font-mono-pz text-[12px] tracking-[0.18em] text-pz-accent">
-            TF-ADC · CERVICAL
+            {`${opportunity.name} · ${opportunity.indication}`.toUpperCase()}
           </div>
 
           <p className="mt-5 text-[13.5px] leading-relaxed text-pz-soft font-light max-w-md">
@@ -38,7 +55,7 @@ export default function FeaturedOpportunity() {
           </p>
 
           <div className="mt-7 border-t pz-border pt-4 grid grid-cols-4 gap-3">
-            {META.map((m) => (
+            {meta.map((m) => (
               <div key={m.k}>
                 <div className="font-mono-pz text-[9px] tracking-[0.18em] uppercase text-pz-muted">
                   {m.k}
@@ -46,7 +63,7 @@ export default function FeaturedOpportunity() {
                 <div className="mt-1 text-[13px] text-pz-text font-light">{m.v}</div>
               </div>
             ))}
-            <ScoreRing score={86} />
+            <ScoreRing score={opportunity.score} />
           </div>
 
           <button className="mt-7 flex items-center gap-2 text-pz-accent font-mono-pz text-[11px] tracking-[0.18em] uppercase hover:text-pz-text transition-colors w-fit">
@@ -54,30 +71,57 @@ export default function FeaturedOpportunity() {
           </button>
         </div>
 
-        {/* RIGHT: protein render */}
-        <div className="relative aspect-square w-full max-w-[460px] mx-auto">
-          <img
-            src={protein}
-            alt="PZ-1092 molecular structure"
-            className="h-full w-full object-contain"
-          />
-          {/* crosshair overlay */}
-          <svg
-            className="absolute inset-0 h-full w-full pointer-events-none opacity-60"
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
-          >
-            <circle cx="50" cy="50" r="6" fill="none" stroke="#A8C979" strokeOpacity="0.5" strokeWidth="0.15" />
-            <circle cx="50" cy="50" r="11" fill="none" stroke="#A8C979" strokeOpacity="0.25" strokeWidth="0.12" />
-            <line x1="44" y1="50" x2="56" y2="50" stroke="#A8C979" strokeOpacity="0.5" strokeWidth="0.15" />
-            <line x1="50" y1="44" x2="50" y2="56" stroke="#A8C979" strokeOpacity="0.5" strokeWidth="0.15" />
-          </svg>
-          <div className="absolute bottom-2 right-2 font-mono-pz text-[9px] tracking-wider text-pz-accent pz-blink">
-            ● LIVE
+        {/* RIGHT: protein render (3Dmol.js via CDN) */}
+        <div className="w-full max-w-[420px] mx-auto">
+          <ProteinViewer pdbId="1CRN" height={360} mode={mode} />
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <RepToggle
+              label="Surface"
+              active={surfaceOn}
+              onClick={() => setSurfaceOn((v) => !v)}
+            />
+            <RepToggle
+              label="Cartoon"
+              active={cartoonOn}
+              onClick={() => setCartoonOn((v) => !v)}
+            />
+            <RepToggle label="Ligand" active={false} disabled />
+            <RepToggle label="Pocket" active={false} disabled />
           </div>
         </div>
       </div>
     </section>
+  );
+}
+
+function RepToggle({
+  label,
+  active,
+  onClick,
+  disabled,
+}: {
+  label: string;
+  active: boolean;
+  onClick?: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={active}
+      className={`rounded-full border px-3 py-1 font-mono-pz text-[9px] tracking-[0.18em] uppercase transition-colors ${
+        disabled
+          ? "border-[color:var(--pz-border)] text-pz-muted/60 cursor-not-allowed"
+          : active
+            ? "border-[color:var(--pz-border-strong)] bg-[color:var(--pz-panel-alt)] text-pz-accent"
+            : "border-[color:var(--pz-border)] text-pz-muted hover:text-pz-soft"
+      }`}
+    >
+      {label}
+    </button>
   );
 }
 

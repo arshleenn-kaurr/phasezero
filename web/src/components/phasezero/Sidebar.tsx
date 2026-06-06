@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   Crosshair,
   Briefcase,
@@ -10,20 +9,25 @@ import {
   Settings as SettingsIcon,
   ChevronDown,
 } from "lucide-react";
+import { Link, useRouterState } from "@tanstack/react-router";
 
 const NAV = [
-  { id: "cc", label: "Command Center", icon: Crosshair },
-  { id: "op", label: "Opportunities", icon: Briefcase },
-  { id: "rs", label: "Research", icon: Microscope },
-  { id: "ds", label: "Data Signals", icon: BarChart3 },
-  { id: "md", label: "Models", icon: CircleDashed },
-  { id: "bt", label: "Backtests", icon: TrendingUp },
-  { id: "lb", label: "Library", icon: BookText },
-  { id: "st", label: "Settings", icon: SettingsIcon },
+  { to: "/", label: "Briefing Room", icon: Crosshair },
+  { to: "/opportunities", label: "Opportunities", icon: Briefcase },
+  { to: "/evidence", label: "Evidence", icon: Microscope },
+  { to: "/signals", label: "Signal Scan", icon: BarChart3 },
+  { to: "/models", label: "Models", icon: CircleDashed },
+  { to: "/simulation", label: "Simulation", icon: TrendingUp },
+  { to: "/memos", label: "Memos", icon: BookText },
+  { to: "/settings", label: "Settings", icon: SettingsIcon },
 ];
 
 export default function Sidebar() {
-  const [active, setActive] = useState("cc");
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  const isActivePath = (to: string) =>
+    to === "/" ? pathname === "/" : pathname.startsWith(to);
+
   return (
     <aside className="hidden lg:flex w-[230px] shrink-0 flex-col justify-between border-r pz-border bg-pz-bg px-5 py-7">
       <div>
@@ -39,12 +43,12 @@ export default function Sidebar() {
 
         <nav className="mt-10 flex flex-col gap-0.5">
           {NAV.map((item) => {
-            const isActive = active === item.id;
+            const isActive = isActivePath(item.to);
             const Icon = item.icon;
             return (
-              <button
-                key={item.id}
-                onClick={() => setActive(item.id)}
+              <Link
+                key={item.to}
+                to={item.to}
                 className={`group relative flex items-center gap-3 rounded-sm py-2.5 pl-3 pr-2 text-left transition-colors ${
                   isActive
                     ? "text-pz-text bg-[color:var(--pz-panel-alt)]"
@@ -56,7 +60,7 @@ export default function Sidebar() {
                 )}
                 <Icon size={14} className={isActive ? "text-pz-accent" : "text-pz-muted"} />
                 <span className="text-[13px] font-light">{item.label}</span>
-              </button>
+              </Link>
             );
           })}
         </nav>

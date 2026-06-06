@@ -1,51 +1,46 @@
-import Sidebar from "./Sidebar";
+import { useEffect, useState } from "react";
+import AppLayout from "./AppLayout";
 import FeaturedOpportunity from "./FeaturedOpportunity";
 import RecommendationPanel from "./RecommendationPanel";
 import PipelineBar from "./PipelineBar";
-import { Search } from "lucide-react";
+import {
+  fetchCommandCenter,
+  MOCK_COMMAND_CENTER,
+  type CommandCenterData,
+} from "@/lib/api";
 
 export default function CommandCenter() {
+  // Seed with mock data so the page renders fully on first paint and acts as a
+  // fallback if the backend is unavailable.
+  const [data, setData] = useState<CommandCenterData>(MOCK_COMMAND_CENTER);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchCommandCenter(controller.signal)
+      .then((live) => setData(live))
+      .catch(() => {
+        // Keep the mock fallback already in state.
+      })
+      .finally(() => setLoading(false));
+    return () => controller.abort();
+  }, []);
+
   return (
-    <div className="min-h-screen w-full bg-pz-bg text-pz-text flex">
-      <Sidebar />
+    <AppLayout title="Command Center" loading={loading}>
+      <Hero />
+      <StatsRow status={data.status} />
 
-      <div className="flex-1 min-w-0 flex flex-col">
-        <TopBar />
-
-        <main className="flex-1 px-8 lg:px-12 pt-8 pb-10">
-          <Hero />
-          <StatsRow />
-
-          <div className="mt-6 grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-5">
-            <FeaturedOpportunity />
-            <RecommendationPanel />
-          </div>
-
-          <PipelineBar />
-        </main>
-      </div>
-    </div>
-  );
-}
-
-function TopBar() {
-  return (
-    <div className="px-8 lg:px-12 pt-7 flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <span className="h-1.5 w-1.5 rounded-full bg-pz-accent" />
-        <span className="font-mono-pz text-[10px] tracking-[0.22em] uppercase text-pz-accent">
-          Command Center
-        </span>
-      </div>
-      <div className="flex items-center gap-2.5 min-w-[280px] max-w-[420px] w-full border-b pz-border pb-1.5">
-        <Search size={13} className="text-pz-muted" />
-        <input
-          type="text"
-          placeholder="Search targets, modalities, or data…"
-          className="bg-transparent text-[12.5px] text-pz-soft placeholder:text-pz-muted outline-none w-full font-light"
+      <div className="mt-6 grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-5 items-start">
+        <FeaturedOpportunity opportunity={data.featured_opportunity} />
+        <RecommendationPanel
+          opportunity={data.featured_opportunity}
+          memo={data.decision_memo}
         />
       </div>
-    </div>
+
+      <PipelineBar />
+    </AppLayout>
   );
 }
 
@@ -64,15 +59,20 @@ function Hero() {
   );
 }
 
-const STATS = [
-  { label: "System Status", value: "All Systems Operational", accent: true },
-  { label: "Signals Monitored", value: "12,842" },
-  { label: "Models Active", value: "37" },
-  { label: "Opportunities Tracked", value: "184" },
-  { label: "Last Update", value: "2m ago" },
-];
-
-function StatsRow() {
+function StatsRow({ status }: { status: CommandCenterData["status"] }) {
+  const STATS = [
+    { label: "System Status", value: status.system_status, accent: true },
+    {
+      label: "Signals Monitored",
+      value: status.signals_monitored.toLocaleString("en-US"),
+    },
+    { label: "Models Active", value: String(status.models_active) },
+    {
+      label: "Opportunities Tracked",
+      value: String(status.opportunities_tracked),
+    },
+    { label: "Last Update", value: status.last_update },
+  ];
   return (
     <div className="mt-9 border-t border-b pz-border py-4 grid grid-cols-2 md:grid-cols-5 gap-y-3">
       {STATS.map((s, i) => (
