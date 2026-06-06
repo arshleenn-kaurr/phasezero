@@ -270,7 +270,7 @@ function OpportunityRow({ opp, idx }: { opp: Opp; idx: number }) {
           <Link
             to="/research"
             search={{ q: opp.researchQuery ?? opp.name }}
-            className="ml-auto flex items-center gap-2 rounded-sm border pz-border px-4 py-2 font-mono-pz text-[9.5px] tracking-[0.18em] uppercase text-pz-muted hover:border-pz-accent hover:text-pz-accent transition-colors whitespace-nowrap"
+            className="ml-auto flex items-center gap-2 rounded-sm border pz-border px-4 py-2 font-mono-pz text-[9.5px] tracking-[0.18em] uppercase text-pz-muted hover:border-pz-accent hover:text-pz-accent transition-colors whitespace-nowrap text-white bold"
           >
             View Details <ArrowRight size={11} />
           </Link>
@@ -278,7 +278,7 @@ function OpportunityRow({ opp, idx }: { opp: Opp; idx: number }) {
           <Link
             to="/opportunities/$id"
             params={{ id: opp.id }}
-            className="ml-auto flex items-center gap-2 rounded-sm border pz-border px-4 py-2 font-mono-pz text-[9.5px] tracking-[0.18em] uppercase text-pz-muted hover:border-pz-accent hover:text-pz-accent transition-colors whitespace-nowrap"
+            className="ml-auto flex items-center gap-2 rounded-sm border pz-border px-4 py-2 font-mono-pz text-[9.5px] tracking-[0.18em] uppercase text-pz-muted hover:border-pz-accent hover:text-pz-accent transition-colors whitespace-nowrap text-white bold"
           >
             View Details <ArrowRight size={11} />
           </Link>
@@ -565,7 +565,7 @@ export default function SearchHome() {
           <img
             src={pzLogo}
             alt="PhaseZero"
-            className="h-14 w-auto opacity-85"
+            className="h-20 w-auto opacity-85"
             style={{ filter: "invert(1) hue-rotate(180deg) brightness(2.2) saturate(1.2)" }}
           />
         </div>

@@ -2,7 +2,8 @@
 // The base URL can be overridden with VITE_API_BASE_URL; it defaults to the
 // local FastAPI dev server.
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+  import.meta.env.VITE_API_BASE_URL ??
+  (import.meta.env.PROD ? "/_/backend" : "http://localhost:8000");
 
 export interface CommandCenterStatus {
   system_status: string;
