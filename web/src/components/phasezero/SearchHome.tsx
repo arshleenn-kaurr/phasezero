@@ -7,6 +7,7 @@ import ShaderBackground from "@/components/ui/shader-background";
 import { FloatingPaths } from "@/components/ui/background-paths";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import phasezeroDashboard from "@/assets/phasezero-dashboard.png";
 
 // ---------------------------------------------------------------------------
 // Brand mark
@@ -389,7 +390,7 @@ export default function SearchHome() {
         }
       >
         <img
-          src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1400&q=80&fit=crop"
+          src={phasezeroDashboard}
           alt="PhaseZero analytics dashboard"
           className="mx-auto rounded-2xl object-cover h-full w-full object-top"
           draggable={false}
