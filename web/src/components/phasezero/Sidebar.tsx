@@ -48,7 +48,7 @@ export default function AppSidebar() {
           <img
             src={pzLogo}
             alt="PhaseZero"
-            className="h-40 w-auto max-w-[300px]"
+            className="h-48 w-auto max-w-[340px]"
             style={{ filter: "invert(1) hue-rotate(180deg) brightness(2.2) saturate(1.2)" }}
           />
         </Link>
@@ -88,21 +88,21 @@ export default function AppSidebar() {
           <div className="border pz-border rounded-sm px-3 py-2.5 flex items-center gap-2">
             <span className="h-1.5 w-1.5 rounded-full bg-pz-accent pz-pulse" />
             <div className="flex flex-col">
-              <span className="text-[12px] text-pz-text">Research Terminal</span>
+              <span className="text-[12px] text-sidebar-foreground">Research Terminal</span>
               <span className="font-mono-pz text-[9px] tracking-wider text-pz-accent">
                 ONLINE
               </span>
             </div>
           </div>
           <button className="flex items-center gap-2.5 px-1 py-1 hover:bg-[color:var(--pz-panel-alt)] rounded-sm transition-colors">
-            <span className="h-7 w-7 rounded-full bg-[color:var(--pz-panel-alt)] border pz-border flex items-center justify-center font-mono-pz text-[10px] text-pz-soft">
+            <span className="h-7 w-7 rounded-full bg-[color:var(--pz-panel-alt)] border pz-border flex items-center justify-center font-mono-pz text-[10px] text-sidebar-foreground">
               JS
             </span>
             <div className="flex flex-col items-start min-w-0">
-              <span className="text-[12px] text-pz-text truncate">Jane Smith, PhD</span>
-              <span className="text-[10px] text-pz-muted truncate">Lead Quant Researcher</span>
+              <span className="text-[12px] text-sidebar-foreground truncate">Jane Smith, PhD</span>
+              <span className="text-[10px] text-sidebar-foreground/70 truncate">Lead Quant Researcher</span>
             </div>
-            <ChevronDown size={12} className="ml-auto text-pz-muted" />
+            <ChevronDown size={12} className="ml-auto text-sidebar-foreground/60" />
           </button>
         </div>
       </SidebarFooter>
