@@ -172,7 +172,7 @@ export default function ResearchPage({ query }: { query: string }) {
                 )}
                 <Chip label={recommendation.label} color={recColor} />
               </div>
-              {uniprot.function && (
+              {Boolean(uniprot.function) && (
                 <p className="mt-4 text-[12.5px] leading-relaxed text-pz-soft font-light max-w-xl">
                   {String(uniprot.function).slice(0, 280)}
                   {String(uniprot.function).length > 280 ? "…" : ""}

@@ -3,7 +3,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { ChevronDown, ArrowRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Spotlight } from "@/components/ui/spotlight";
-import pzLogo from "@/assets/phasezero-logo.png";
+import PZLogo from "./PZLogo";
 
 const ACCENT = "#A8C979";
 const BG = "#080D0F";
@@ -130,14 +130,9 @@ export default function MoleculeHero() {
         style={{ opacity: heroOpacity, y: heroY }}
         className="relative z-10 flex h-full flex-col"
       >
-        {/* Top nav row */}
-        <div className="flex items-center justify-between px-8 lg:px-14 pt-4 shrink-0">
-          <img
-            src={pzLogo}
-            alt="PhaseZero"
-            className="h-32 w-auto max-w-[420px] -my-16"
-            style={{ filter: "invert(1) hue-rotate(180deg) brightness(2.2) saturate(1.2)" }}
-          />
+        {/* Top nav row — logo flush left, all opps right */}
+        <div className="flex items-center justify-between px-8 lg:px-14 pt-6 pb-8 shrink-0">
+          <PZLogo scale={1.15} showSub={false} />
           <Link
             to="/opportunities"
             className="font-mono-pz text-[9px] tracking-[0.22em] uppercase text-pz-muted hover:text-pz-accent transition-colors"
@@ -146,10 +141,10 @@ export default function MoleculeHero() {
           </Link>
         </div>
 
-        {/* Hero grid */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-0 items-center px-8 lg:px-14">
+        {/* Hero grid — top-aligned so headline sits right under the logo */}
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-0 items-start px-8 lg:px-14">
           {/* Left: copy */}
-          <div className="flex flex-col justify-center py-12 lg:py-0">
+          <div className="flex flex-col justify-start py-0">
             <div className="font-mono-pz text-[9.5px] tracking-[0.34em] uppercase text-pz-accent mb-5">
               ADC Target Intelligence
             </div>
