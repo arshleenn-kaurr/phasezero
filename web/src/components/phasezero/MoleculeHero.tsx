@@ -131,11 +131,11 @@ export default function MoleculeHero() {
         className="relative z-10 flex h-full flex-col"
       >
         {/* Top nav row */}
-        <div className="flex items-center justify-between px-8 lg:px-14 pt-7 shrink-0">
+        <div className="flex items-center justify-between px-8 lg:px-14 pt-4 shrink-0">
           <img
             src={pzLogo}
             alt="PhaseZero"
-            className="h-32 w-auto max-w-[420px] -my-10"
+            className="h-32 w-auto max-w-[420px] -my-16"
             style={{ filter: "invert(1) hue-rotate(180deg) brightness(2.2) saturate(1.2)" }}
           />
           <Link
