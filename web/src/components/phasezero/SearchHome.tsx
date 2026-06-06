@@ -362,6 +362,12 @@ export default function SearchHome() {
           </Link>
         </div>
 
+        {/* Second wave bridge — just below the section header text, before ContainerScroll */}
+        <div className="relative overflow-hidden" style={{ height: "90px" }}>
+          <FloatingPaths position={-1} opacityScale={3} />
+          <FloatingPaths position={0.5} opacityScale={3} />
+        </div>
+
         {/* ContainerScroll inside the animated zone */}
         <div className="relative z-10">
       <ContainerScroll
