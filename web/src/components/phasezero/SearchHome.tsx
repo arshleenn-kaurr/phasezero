@@ -8,7 +8,7 @@ import { FloatingPaths } from "@/components/ui/background-paths";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import phasezeroDashboard from "@/assets/phasezero-dashboard.png";
-import PZLogo from "./PZLogo";
+import pzLogo from "@/assets/phasezero-logo.png";
 
 // ---------------------------------------------------------------------------
 // Data
@@ -507,7 +507,12 @@ export default function SearchHome() {
               </div>
             ))}
           </div>
-          <PZLogo scale={0.75} showSub={false} />
+          <img
+            src={pzLogo}
+            alt="PhaseZero"
+            className="h-36 w-auto opacity-85"
+            style={{ filter: "invert(1) hue-rotate(180deg) brightness(2.2) saturate(1.2)" }}
+          />
         </div>
       </footer>
     </div>
