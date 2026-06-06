@@ -18,6 +18,7 @@ import math
 import os
 import re
 import time
+import xml.etree.ElementTree as ET
 from typing import Awaitable, Callable, Optional
 
 import httpx
@@ -82,16 +83,69 @@ def _ncbi_params(**extra) -> dict:
     return params
 
 
+# --- Abstract parsing / signal extraction (Literature Agent) ----------------
+
+_CUTOFF_KEYWORDS = (
+    "expression level", "expression levels", "threshold", "cutoff", "cut-off",
+    "h-score", "ihc", "tps", "cps", "positivity", "staining intensity",
+)
+_NORMAL_TRIGGERS = ("normal", "healthy", "control")
+_TISSUE_VOCAB = (
+    "kidney", "renal", "uterus", "uterine", "endothelium", "vascular", "liver",
+    "skin", "gi tract", "gastrointestinal", "lung", "breast", "pancreas",
+    "heart", "brain", "ovary", "colon", "stomach", "epithelium",
+)
+
+
+def _split_sentences(text: str) -> list[str]:
+    return [s.strip() for s in re.split(r"(?<=[.!?])\s+", text) if s.strip()]
+
+
+def _parse_abstract(xml_text: str) -> str:
+    """Concatenate AbstractText sections from a PubMed efetch XML response."""
+    try:
+        root = ET.fromstring(xml_text)
+    except ET.ParseError:
+        return ""
+    parts: list[str] = []
+    for node in root.iter("AbstractText"):
+        text = "".join(node.itertext()).strip()
+        if not text:
+            continue
+        label = node.get("Label")
+        parts.append(f"{label}: {text}" if label else text)
+    return " ".join(parts).strip()
+
+
+def _extract_cutoffs(abstract: str) -> list[str]:
+    """Sentences mentioning biomarker cutoff / expression-threshold language."""
+    return [
+        sentence
+        for sentence in _split_sentences(abstract)
+        if any(keyword in sentence.lower() for keyword in _CUTOFF_KEYWORDS)
+    ]
+
+
+def _extract_normal_tissue(abstract: str) -> list[str]:
+    """Normal/healthy tissues named in the abstract (cross-reactivity signal)."""
+    tissues: set[str] = set()
+    for sentence in _split_sentences(abstract):
+        low = sentence.lower()
+        if any(trigger in low for trigger in _NORMAL_TRIGGERS):
+            tissues.update(tissue for tissue in _TISSUE_VOCAB if tissue in low)
+    return sorted(tissues)
+
+
 # ---------------------------------------------------------------------------
-# 1. Literature Agent — PubMed E-utilities (esearch + esummary)
+# 1. Literature Agent — PubMed E-utilities (esearch + efetch abstract parse)
 # ---------------------------------------------------------------------------
 
 async def literature_agent(indication: str, target: str) -> AgentOutput:
     gene = _gene_symbol(target)
     term = f"{gene} ADC {indication}".strip()
-    findings: list[str] = []
     flags: list[str] = []
     count = 0
+    abstract = ""
 
     async with httpx.AsyncClient(timeout=_TIMEOUT, headers=_HEADERS) as client:
         search = await client.get(
@@ -109,38 +163,63 @@ async def literature_agent(indication: str, target: str) -> AgentOutput:
         pmids = esearch.get("idlist", [])
         count = int(esearch.get("count", 0))
 
+        # Pull the abstract for the first (most relevant) result via efetch.
         if pmids:
-            summary = await client.get(
-                f"{PUBMED_BASE}/esummary.fcgi",
+            fetch = await client.get(
+                f"{PUBMED_BASE}/efetch.fcgi",
                 params=_ncbi_params(
                     db="pubmed",
-                    id=",".join(pmids),
-                    retmode="json",
+                    id=pmids[0],
+                    retmode="xml",
+                    rettype="abstract",
                 ),
             )
-            summary.raise_for_status()
-            result = summary.json().get("result", {})
-            # TODO(team): refine parsing — pull abstracts via efetch and extract
-            #             expression %, biomarker cutoffs, normal-tissue mentions.
-            for pmid in result.get("uids", []):
-                rec = result.get(pmid, {})
-                title = (rec.get("title") or "").rstrip(".")
-                pubdate = (rec.get("pubdate") or "")[:4]
-                if title:
-                    findings.append(f"{title} (PMID:{pmid}, {pubdate})")
+            fetch.raise_for_status()
+            abstract = _parse_abstract(fetch.text)
 
-    if count == 0:
-        flags.append("No PubMed coverage for target + indication")
-    elif count < 5:
+    # Graceful fallback: no hits, or a top result with no usable abstract text.
+    if not pmids or not abstract:
+        flags.append("incomplete data")
+        if count == 0:
+            flags.append("No PubMed coverage for target + indication")
+        return AgentOutput(
+            status="complete",
+            input_sources=[f"PubMed E-utilities ({count} papers)"],
+            findings=[
+                "Abstract: unavailable for top result",
+                "Biomarker cutoffs identified: none (no abstract parsed)",
+                "Normal tissue cross-reactivity risk: unknown (no abstract parsed)",
+            ],
+            confidence=50,
+            flags=flags,
+        )
+
+    cutoffs = _extract_cutoffs(abstract)
+    tissues = _extract_normal_tissue(abstract)
+
+    findings = [
+        f"Abstract: {abstract[:200]}",
+        "Biomarker cutoffs identified: "
+        + ("; ".join(cutoffs) if cutoffs else "none found in abstract"),
+        "Normal tissue cross-reactivity risk: "
+        + (f"yes — {', '.join(tissues)}" if tissues else "no explicit normal-tissue signal"),
+    ]
+
+    if count < 5:
         flags.append("Low PubMed coverage")
 
-    # Confidence: scales with corpus size on a log curve, capped at 90.
-    confidence = _clamp_confidence(40 + math.log10(count + 1) * 18)
+    # Confidence from data quality: corpus size + extracted signal richness.
+    confidence = _clamp_confidence(
+        50
+        + math.log10(count + 1) * 12
+        + (10 if cutoffs else 0)
+        + (8 if tissues else 0)
+    )
 
     return AgentOutput(
         status="complete",
         input_sources=[f"PubMed E-utilities ({count} papers)"],
-        findings=findings[:5] or ["No relevant publications found."],
+        findings=findings,
         confidence=confidence,
         flags=flags,
     )
