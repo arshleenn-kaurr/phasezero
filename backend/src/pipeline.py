@@ -8,14 +8,18 @@ from src.scoring import compute_all_scores
 from src.simulations import run_monte_carlo
 
 
-def run_diligence_pipeline(candidate: dict, assumptions: dict, all_candidates: list, evidence: dict) -> dict:
-    """Run the full deterministic backend pipeline for one candidate."""
+async def run_diligence_pipeline(candidate: dict, assumptions: dict, all_candidates: list, evidence: dict) -> dict:
+    """Run the full backend pipeline for one candidate.
+
+    Async because the research agents fan out to live external APIs via
+    asyncio.gather; the remaining (deterministic, CPU-bound) steps run inline.
+    """
     cid = candidate["id"]
     scores = ScoreBundle.model_validate(compute_all_scores(candidate["base_scores"], assumptions)).model_dump()
     simulation = run_monte_carlo(cid, candidate["base_scores"], assumptions)
     hmm = HMMResult.model_validate(run_hmm(cid, candidate["base_scores"], assumptions)).model_dump()
     bionemo = run_bionemo_plausibility(cid, candidate["base_scores"], assumptions)
-    agents = run_all_agents(cid)
+    agents = await run_all_agents(candidate["indication"], candidate["target"])
     graph = build_evidence_graph(all_candidates, evidence)
     graph_summary = summarize_evidence_graph(graph, cid)
     similarity_query = " ".join(

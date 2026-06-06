@@ -1,373 +1,458 @@
 """
-Agentic parsing layer — deterministic mock agents.
-Each agent returns: status, input_sources, findings, confidence, flags, latency_ms.
+Live research agents — async, API-backed parsing layer.
+
+Each agent fetches real data and returns an AgentOutput:
+  status, input_sources, findings, confidence, flags, latency_ms
+
+Agents run in parallel via asyncio.gather in run_all_agents(); the Strategy
+Agent runs afterwards because it synthesizes the other agents' outputs.
+
+Confidence is a deterministic 0-100 score derived from data quality. Every
+agent degrades gracefully: an API failure yields a low-confidence AgentOutput
+with an explanatory flag rather than raising, so one slow/failing source never
+takes down the whole diligence run.
 """
 
+import asyncio
+import math
+import os
+import re
 import time
+from typing import Awaitable, Callable, Optional
+
+import httpx
 
 from src.schemas import AgentOutput
+from src.seer_table import lookup_incidence
 
-_AGENT_DATA = {
-    "b7h4_tnbc": {
-        "Literature Agent": {
-            "status": "complete",
-            "input_sources": ["PubMed (847 papers)", "Human Protein Atlas", "TCGA BRCA dataset", "BioRxiv preprints"],
-            "findings": [
-                "B7-H4 protein expression confirmed in 30–45% TNBC tumor samples by IHC (PMID:32918890)",
-                "mRNA overexpression correlated with basal-like subtype in TCGA dataset (n=1,084)",
-                "Normal tissue expression restricted: uterus and kidney epithelium only (HPA)",
-                "Internalization confirmed upon antibody binding in 3 TNBC cell lines (in vitro)",
-                "No validated IHC companion diagnostic or prospective biomarker cutoff published",
-            ],
-            "confidence": 68,
-            "flags": ["No validated CDx assay", "Limited clinical-grade expression data"],
-            "latency_ms": 1240,
-        },
-        "Trial Agent": {
-            "status": "complete",
-            "input_sources": ["ClinicalTrials.gov", "WHO ICTRP", "ASCO/ESMO abstracts 2022–2024"],
-            "findings": [
-                "AZD9401 (AZ/FirstBio) Phase I dose escalation ongoing — TNBC cohort active (NCT05489419)",
-                "SGN-B7H4V (Seagen/Pfizer) Phase I in B7-H4+ tumors including TNBC (NCT05103462)",
-                "2 additional B7-H4 ADC programs advancing toward IND (conference abstracts 2023)",
-                "Sacituzumab govitecan approved TNBC 2L+ — sets clinical efficacy bar (ORR 35%)",
-                "TDXd DESTINY-Breast04/06 approved HER2-low/ultralow BC — narrows unselected TNBC population",
-            ],
-            "confidence": 74,
-            "flags": ["High competitive saturation", "Clinical bar elevated by SG and TDXd approvals"],
-            "latency_ms": 890,
-        },
-        "Regulatory Agent": {
-            "status": "complete",
-            "input_sources": ["FDA drug labels", "FDA oncology guidance documents", "EMA EPAR database"],
-            "findings": [
-                "TNBC accelerated approval via ORR endpoint is established precedent (SG, olaparib, pembrolizumab)",
-                "Biomarker-defined subgroup adds companion diagnostic requirement (18–24 month CDx development)",
-                "No B7-H4 IHC assay cleared by FDA; assay development on critical path",
-                "TNBC FDA oncology division has well-established regulatory relationship",
-            ],
-            "confidence": 62,
-            "flags": ["CDx development adds timeline and complexity", "No regulatory precedent for B7-H4 as biomarker"],
-            "latency_ms": 720,
-        },
-        "Commercial Agent": {
-            "status": "complete",
-            "input_sources": ["SEER database", "Company earnings reports", "Market access analyses", "Payer coverage data"],
-            "findings": [
-                "TNBC US incidence ~45,000/year; B7-H4+ subgroup est. 13,500–18,000 patients",
-                "SG 2L+ TNBC US revenue ~$800M (2023) — sets pricing floor and payer reference point",
-                "Competitive saturation: 2 approved ADCs + 4 B7-H4 programs + multiple other TNBC ADC entrants",
-                "Payer differentiation requires biomarker-defined label for premium access",
-                "Commercial window estimated 2030–2035 if Phase II started 2025",
-            ],
-            "confidence": 65,
-            "flags": ["High competitive saturation (score 78/100)", "Biomarker label required for pricing power"],
-            "latency_ms": 1080,
-        },
-        "ADC Design Agent": {
-            "status": "complete",
-            "input_sources": ["ADC design literature", "Payload pharmacology database", "Internalization kinetics data"],
-            "findings": [
-                "MMAE payload: proven in breast cancer ADCs (SG uses SN-38); DAR 4 likely optimal",
-                "Topoisomerase-I payload (DXd-class): potentially differentiated profile for TNBC",
-                "B7-H4 internalization kinetics: moderate (T1/2 ~4–6 hours) — DAR optimization critical",
-                "Bystander effect important for heterogeneous B7-H4 expression in TNBC tumors",
-                "Key design risk: normal tissue TF expression may narrow therapeutic window below that of SG",
-            ],
-            "confidence": 60,
-            "flags": ["Therapeutic window optimization needed", "Bystander effect design trade-off"],
-            "latency_ms": 640,
-        },
-        "Failure Memory Agent": {
-            "status": "complete",
-            "input_sources": ["Prior ADC failure database (23 archetypes)", "TNBC clinical failure analysis"],
-            "findings": [
-                "FAILURE PATTERN: 2 prior TNBC ADC broad-trial failures linked to weak biomarker enrichment strategy",
-                "FAILURE PATTERN: 3 prior ADC programs with similar target expression profile showed weak clinical delta vs SG",
-                "Crowded-market failure archetype: 6 of 8 late entrants in established ADC market achieved <30% of leader revenue",
-                "Success-similarity to SG TNBC trial: moderate (expression-selected trial design improved outcome)",
-            ],
-            "confidence": 72,
-            "flags": [
-                "Weak clinical delta risk — HIGH",
-                "Crowded market risk — HIGH",
-                "Broad trial / weak enrichment risk — MEDIUM",
-            ],
-            "latency_ms": 950,
-        },
-        "BioNeMo Agent": {
-            "status": "complete",
-            "input_sources": ["BioNeMo pathway models (mock)", "Protein structure DB", "scRNA-seq atlas"],
-            "findings": [
-                "B7-H4 pathway proximity score: 0.71 — moderate plausibility",
-                "Target representation in structure databases: partial (antibody-antigen complex modeled)",
-                "Druggability score: 0.68 — accessible surface epitope confirmed",
-                "Cross-reactivity risk: low-moderate (uterus/kidney epithelium signal)",
-            ],
-            "confidence": 70,
-            "flags": ["No clinical-grade structure data", "Normal tissue cross-reactivity requires monitoring"],
-            "latency_ms": 1340,
-        },
-        "Strategy Agent": {
-            "status": "complete",
-            "input_sources": ["All agent outputs", "Commercial model", "Portfolio strategy inputs"],
-            "findings": [
-                "Diligence Priority: LOWER — biomarker differentiation is prerequisite for investment thesis",
-                "Core thesis: B7-H4 ADC in TNBC is commercially tempting but crowded. Credible only with validated biomarker and clear clinical delta vs SG.",
-                "Key missing data: B7-H4 IHC CDx assay, Phase I safety signal, biomarker-high subgroup size",
-                "Recommended next diligence: CDx assay development, SG-excluded population mapping, ADC design workshop",
-            ],
-            "confidence": 65,
-            "flags": ["Conditional investment thesis", "Biomarker strategy is prerequisite"],
-            "latency_ms": 1120,
-        },
-    },
-    "tf_cervical": {
-        "Literature Agent": {
-            "status": "complete",
-            "input_sources": ["PubMed (634 papers)", "TV clinical trial publications", "Human Protein Atlas", "Cervical cancer genomics"],
-            "findings": [
-                "TF expression confirmed in 70–80% cervical cancer tumors by IHC — high expression, low cutoff needed",
-                "TV (Tivdak) validation: mechanistic confirmation that TF ADC kills cervical cancer cells in vivo",
-                "TF surface expression retained in recurrent/platinum-resistant disease (biopsy study n=42)",
-                "TF internalization kinetics well-characterized; MMAE payload fully mechanistically validated",
-                "Normal tissue TF on vascular endothelium confirmed as mechanism of ocular/bleeding toxicity",
-            ],
-            "confidence": 82,
-            "flags": ["Normal tissue vascular TF expression — therapeutic index constraint"],
-            "latency_ms": 980,
-        },
-        "Trial Agent": {
-            "status": "complete",
-            "input_sources": ["ClinicalTrials.gov", "ESMO/ASCO publications", "FDA approval records"],
-            "findings": [
-                "InnovaTV 204: TV ORR 24%, mDOR 8.3 months in 3L+ cervical cancer (JCO 2022)",
-                "InnovaTV 301: TV vs chemotherapy OS confirmed (mOS 11.5 vs 9.5 months, ESMO 2023)",
-                "FDA approval September 2021 — full regulatory de-risking of TF ADC in cervical cancer",
-                "InnovaTV 205: TV+pembrolizumab Phase III in 1L cervical ongoing (NCT03786081)",
-                "2 next-generation TF ADC programs (non-MMAE payloads) in IND/Phase I stage",
-            ],
-            "confidence": 88,
-            "flags": ["TV lifecycle management competitive risk"],
-            "latency_ms": 760,
-        },
-        "Regulatory Agent": {
-            "status": "complete",
-            "input_sources": ["FDA cervical cancer drug labels", "Accelerated approval guidance", "FDA oncology publications"],
-            "findings": [
-                "Accelerated approval via ORR endpoint fully established in cervical cancer via TV",
-                "Confirmatory OS trial feasible and executed (InnovaTV 301) — regulatory path fully validated",
-                "No CDx required for TF — expression broadly high across cervical cancer",
-                "Differentiated safety profile vs TV (reduced ocular/bleeding) likely accepted as label differentiation",
-                "FDA cervical cancer oncology division relationship well-established via TV program",
-            ],
-            "confidence": 85,
-            "flags": ["Confirmatory trial requirement (3–4 years)", "Must show differentiation from TV"],
-            "latency_ms": 620,
-        },
-        "Commercial Agent": {
-            "status": "complete",
-            "input_sources": ["SEER cervical cancer data", "TV revenue reports", "Treatment algorithm analysis"],
-            "findings": [
-                "Recurrent/metastatic cervical cancer: ~13,000 eligible US patients/year at target treatment line",
-                "TV US revenue ~$400M (2023) and growing rapidly — validates commercial opportunity size",
-                "High unmet need: limited options post-platinum + pembrolizumab; no strong 3L+ standard of care",
-                "Improved safety profile (reduced ocular/bleeding) is commercially valuable — significant toxicity management burden with TV",
-                "Commercial model works at 13k addressable patients with premium ADC pricing",
-            ],
-            "confidence": 80,
-            "flags": ["Smaller indication than TNBC/NSCLC", "TV lifecycle management competitive pressure"],
-            "latency_ms": 920,
-        },
-        "ADC Design Agent": {
-            "status": "complete",
-            "input_sources": ["TV pharmacology data", "Alternative payload literature", "ADC design reviews"],
-            "findings": [
-                "MMAE payload: fully validated via TV; basis for next-gen design comparison",
-                "Topoisomerase-I (DXd-class) payload: mechanistically plausible, potentially reduced vascular endothelium bystander toxicity",
-                "Key design opportunity: linker modifications to reduce ocular/bleeding toxicity while maintaining tumor cell killing",
-                "DAR 4 (TV) is likely optimal; next-gen should demonstrate TI improvement in preclinical models",
-                "Bispecific or masked ADC approaches could reduce normal tissue payload exposure",
-            ],
-            "confidence": 78,
-            "flags": ["Must demonstrate measurable TI improvement vs TV in preclinical models"],
-            "latency_ms": 580,
-        },
-        "Failure Memory Agent": {
-            "status": "complete",
-            "input_sources": ["Prior ADC failure database", "TF target precedent", "Lifecycle management competition data"],
-            "findings": [
-                "SUCCESS PATTERN: TV approval validates target, mechanism, and clinical path — failure similarity is LOW",
-                "Risk: lifecycle management competition from TV franchise (Seagen/Pfizer) — 6/8 next-gen ADCs in validated space faced lifecycle pressure",
-                "Differentiation axis (TI improvement) is a proven commercial strategy in ADC field (TDXd vs T-DM1)",
-                "Indication size risk: 13k patients is commercially viable but leaves limited margin for competition",
-            ],
-            "confidence": 82,
-            "flags": [
-                "Target liability risk — LOW (manageable)",
-                "Crowded market risk — MEDIUM (TV franchise)",
-            ],
-            "latency_ms": 880,
-        },
-        "BioNeMo Agent": {
-            "status": "complete",
-            "input_sources": ["BioNeMo pathway models (mock)", "TF protein structure", "TV pharmacology models"],
-            "findings": [
-                "TF pathway proximity score: 0.87 — high plausibility; TF central to cervical cancer biology",
-                "Full ADC-TF complex modeled from TV crystal structure (PDB 2HFT available)",
-                "Druggability score: 0.85 — surface expression, strong internalization, payload compatibility confirmed",
-                "Cross-reactivity: vascular endothelium TF expression is the key normal tissue signal — addressable with design",
-            ],
-            "confidence": 85,
-            "flags": ["Vascular TF expression requires next-gen ADC design solution"],
-            "latency_ms": 1100,
-        },
-        "Strategy Agent": {
-            "status": "complete",
-            "input_sources": ["All agent outputs", "Commercial model", "Portfolio strategy inputs"],
-            "findings": [
-                "Diligence Priority: HIGH — TV approval fully de-risks target. Next-gen TF ADC is a clear, bounded opportunity.",
-                "Core thesis: TF ADC in cervical cancer combines validated biology, high unmet need, clear regulatory path, and measurable differentiation axis (TI vs TV).",
-                "Key missing data: next-gen TF ADC preclinical TI comparison vs TV; post-TV patient biopsy TF expression",
-                "Recommended next: payload/linker screen vs MMAE; TV deep-dive; commercial post-TV population sizing",
-            ],
-            "confidence": 83,
-            "flags": ["Strong thesis — proceed to phase 2 diligence"],
-            "latency_ms": 1050,
-        },
-    },
-    "nectin4_expansion": {
-        "Literature Agent": {
-            "status": "complete",
-            "input_sources": ["PubMed (712 papers)", "EV pharmacology publications", "Tumor expression atlases"],
-            "findings": [
-                "Nectin-4 expression: NSCLC 28%, TNBC 32%, gastric 25% by IHC 2+/3+ (multiple studies)",
-                "EV (enfortumab vedotin) mechanism fully characterized: MMAE payload, high internalization in urothelial",
-                "Cross-tumor expression confirmed but variable; IHC scoring normalization not standardized",
-                "No prospective validation of Nectin-4 IHC as predictive biomarker outside urothelial context",
-                "Expression levels in non-urothelial tumors are lower than urothelial (H-score difference ~40–60 points)",
-            ],
-            "confidence": 74,
-            "flags": ["No validated cross-tumor biomarker cutoff", "Expression level lower than urothelial"],
-            "latency_ms": 1050,
-        },
-        "Trial Agent": {
-            "status": "complete",
-            "input_sources": ["ClinicalTrials.gov", "ASCO 2024 abstracts", "Astellas/Pfizer pipeline"],
-            "findings": [
-                "EV approval in urothelial: ORR 44%, OS benefit confirmed in EV-301 (NEJM 2021)",
-                "EV basket Phase II in Nectin-4+ solid tumors enrolling: NSCLC, TNBC, gastric cohorts (NCT04640477)",
-                "NSCLC EV single-arm Phase II interim ORR ~18% — lower than urothelial (ASCO 2024)",
-                "EV+pembro EV-302/KEYNOTE-869 approved 1L urothelial — combination bar set",
-                "Multiple biosimilar/biobetter programs advancing toward urothelial; expansion race active",
-            ],
-            "confidence": 76,
-            "flags": ["NSCLC ORR signal weaker than urothelial", "High consensus — first-mover advantage eroding"],
-            "latency_ms": 840,
-        },
-        "Regulatory Agent": {
-            "status": "complete",
-            "input_sources": ["FDA basket trial guidance", "Tumor-agnostic approval precedents", "EV label"],
-            "findings": [
-                "Tumor-agnostic approval via basket trial is feasible but requires strong ORR + validated CDx (entrectinib/larotrectinib precedent)",
-                "Indication-specific Phase III likely required for each tumor type given current signal strength",
-                "Nectin-4 IHC CDx would need prospective validation — adds 18–24 months to timeline",
-                "EV peripheral neuropathy and hyperglycemia safety monitoring requirements well-established",
-            ],
-            "confidence": 68,
-            "flags": ["CDx validation required", "Per-tumor-type Phase III likely vs basket approval"],
-            "latency_ms": 660,
-        },
-        "Commercial Agent": {
-            "status": "complete",
-            "input_sources": ["Epidemiology estimates", "EV revenue data", "Competitive landscape"],
-            "findings": [
-                "NSCLC Nectin-4+ addressable: ~30,000 US/year; TNBC ~14,000; gastric ~10,000",
-                "EV US revenue ~$1.2B (2023) and growing — expansion would significantly increase TAM",
-                "High consensus attention: multiple companies pursuing identical expansion strategy",
-                "Alpha partially priced in: this is no longer a contrarian opportunity",
-                "Window for Phase III design with competitive advantage: 2025–2028",
-            ],
-            "confidence": 70,
-            "flags": ["High competitive saturation (score 68/100)", "Alpha reduction from consensus attention"],
-            "latency_ms": 960,
-        },
-        "ADC Design Agent": {
-            "status": "complete",
-            "input_sources": ["EV pharmacology", "MMAE payload data", "Internalization studies"],
-            "findings": [
-                "EV ADC design (MMAE, DAR 4) fully validated in urothelial — use as reference scaffold",
-                "Key uncertainty: whether MMAE payload internalization kinetics translate to non-urothelial TME",
-                "Alternative payload consideration for non-urothelial: topoisomerase-I class may provide better bystander effect",
-                "Dermatitis (skin Nectin-4 expression) and GI toxicity (GI Nectin-4 expression) safety monitoring required",
-            ],
-            "confidence": 71,
-            "flags": ["Non-urothelial internalization kinetics uncertain", "Skin/GI toxicity monitoring requirement"],
-            "latency_ms": 590,
-        },
-        "Failure Memory Agent": {
-            "status": "complete",
-            "input_sources": ["Prior ADC failure database", "Pan-tumor expansion history", "TNBC/NSCLC ADC failures"],
-            "findings": [
-                "FAILURE PATTERN: 4/6 prior pan-tumor ADC expansions without prospective biomarker cutoff validation showed enrichment failures",
-                "FAILURE PATTERN: expression-guided expansions where non-primary tumor type ORR was <50% of primary — seen in 3 programs",
-                "Success-similarity to urothelial EV: moderate — biology partially translates but context matters",
-                "Enrichment biomarker validated prospectively is prerequisite for Phase III design",
-            ],
-            "confidence": 70,
-            "flags": [
-                "Broad trial / weak enrichment risk — MEDIUM",
-                "Crowded market risk — MEDIUM",
-                "Weak clinical delta risk — MEDIUM",
-            ],
-            "latency_ms": 910,
-        },
-        "BioNeMo Agent": {
-            "status": "complete",
-            "input_sources": ["BioNeMo pathway models (mock)", "Nectin-4 structure database", "scRNA-seq atlas"],
-            "findings": [
-                "Nectin-4 pathway proximity score: 0.79 — good plausibility; expression supported by lineage biology",
-                "Structure availability: good — EV antibody-antigen complex modeled from urothelial context",
-                "Druggability score: 0.77 — surface expression, internalization confirmed in urothelial; cross-tumor validation needed",
-                "Cross-reactivity: skin (dermatitis) and GI tract expression are known safety signals from EV label",
-            ],
-            "confidence": 77,
-            "flags": ["Cross-tumor internalization uncertainty", "Biomarker cutoff validation required"],
-            "latency_ms": 1240,
-        },
-        "Strategy Agent": {
-            "status": "complete",
-            "input_sources": ["All agent outputs", "Commercial model", "Portfolio strategy inputs"],
-            "findings": [
-                "Diligence Priority: SELECTIVE — strong biology but reduced hidden alpha; subgroup-specific strategy required",
-                "Core thesis: Nectin-4 expansion is a credible but consensus opportunity. Alpha depends on subgroup specificity and timing advantage.",
-                "Key missing data: EV basket trial full interim data; prospective Nectin-4 IHC cutoff validation; per-tumor competitive filing status",
-                "Recommended: wait for EV basket trial interim data before committing Phase III resources; map competitor filing timelines",
-            ],
-            "confidence": 72,
-            "flags": ["Selective diligence — subgroup data gating decision"],
-            "latency_ms": 1070,
-        },
-    },
-}
+# ---------------------------------------------------------------------------
+# Shared config
+# ---------------------------------------------------------------------------
+
+_TIMEOUT = httpx.Timeout(10.0, connect=5.0)
+_HEADERS = {"User-Agent": "PhaseZero-research/0.1"}
+
+# NCBI politeness params; set NCBI_API_KEY env for higher rate limits.
+_NCBI_TOOL = "PhaseZero"
+_NCBI_EMAIL = os.environ.get("NCBI_EMAIL", "research@phasezero.bio")
+_NCBI_API_KEY = os.environ.get("NCBI_API_KEY")
+
+PUBMED_BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
+CTGOV_BASE = "https://clinicaltrials.gov/api/v2/studies"
+OPENFDA_LABEL = "https://api.fda.gov/drug/label.json"
+CHEMBL_TARGET = "https://www.ebi.ac.uk/chembl/api/data/target/search.json"
+BIONEMO_ENDPOINT = os.environ.get(
+    "BIONEMO_ENDPOINT",
+    "https://health.api.nvidia.com/v1/biology/nvidia/bionemo",  # TODO(team): confirm NIM URL
+)
 
 
-def run_agent(candidate_id: str, agent_name: str) -> dict:
-    data = _AGENT_DATA.get(candidate_id, {}).get(agent_name, {})
-    payload = dict(data) if data else {
-        "status": "complete",
-        "input_sources": ["Mock data"],
-        "findings": ["No specific data for this candidate-agent combination."],
-        "confidence": 50,
-        "flags": [],
-        "latency_ms": 500,
-    }
-    return AgentOutput.model_validate(payload).model_dump()
+def _clamp_confidence(value: float) -> int:
+    return int(max(0, min(100, round(value))))
 
 
-def run_all_agents(candidate_id: str) -> dict:
-    agent_names = [
-        "Literature Agent", "Trial Agent", "Regulatory Agent", "Commercial Agent",
-        "ADC Design Agent", "Failure Memory Agent", "BioNeMo Agent", "Strategy Agent",
+def _gene_symbol(target: str) -> str:
+    """Extract a clean query token from a target label.
+
+    "B7-H4 (VTCN1)" -> "VTCN1"; "Tissue Factor (TF / CD142 / F3)" -> "TF";
+    falls back to the raw target string when no parenthetical is present.
+    """
+    match = re.search(r"\(([^)]+)\)", target or "")
+    if match:
+        first = re.split(r"[/,]", match.group(1))[0].strip()
+        if first:
+            return first
+    return (target or "").strip()
+
+
+def _ncbi_params(**extra) -> dict:
+    params = {"tool": _NCBI_TOOL, "email": _NCBI_EMAIL, **extra}
+    if _NCBI_API_KEY:
+        params["api_key"] = _NCBI_API_KEY
+    return params
+
+
+# ---------------------------------------------------------------------------
+# 1. Literature Agent — PubMed E-utilities (esearch + esummary)
+# ---------------------------------------------------------------------------
+
+async def literature_agent(indication: str, target: str) -> AgentOutput:
+    gene = _gene_symbol(target)
+    term = f"{gene} ADC {indication}".strip()
+    findings: list[str] = []
+    flags: list[str] = []
+    count = 0
+
+    async with httpx.AsyncClient(timeout=_TIMEOUT, headers=_HEADERS) as client:
+        search = await client.get(
+            f"{PUBMED_BASE}/esearch.fcgi",
+            params=_ncbi_params(
+                db="pubmed",
+                term=term,
+                retmax="10",
+                retmode="json",
+                sort="relevance",
+            ),
+        )
+        search.raise_for_status()
+        esearch = search.json().get("esearchresult", {})
+        pmids = esearch.get("idlist", [])
+        count = int(esearch.get("count", 0))
+
+        if pmids:
+            summary = await client.get(
+                f"{PUBMED_BASE}/esummary.fcgi",
+                params=_ncbi_params(
+                    db="pubmed",
+                    id=",".join(pmids),
+                    retmode="json",
+                ),
+            )
+            summary.raise_for_status()
+            result = summary.json().get("result", {})
+            # TODO(team): refine parsing — pull abstracts via efetch and extract
+            #             expression %, biomarker cutoffs, normal-tissue mentions.
+            for pmid in result.get("uids", []):
+                rec = result.get(pmid, {})
+                title = (rec.get("title") or "").rstrip(".")
+                pubdate = (rec.get("pubdate") or "")[:4]
+                if title:
+                    findings.append(f"{title} (PMID:{pmid}, {pubdate})")
+
+    if count == 0:
+        flags.append("No PubMed coverage for target + indication")
+    elif count < 5:
+        flags.append("Low PubMed coverage")
+
+    # Confidence: scales with corpus size on a log curve, capped at 90.
+    confidence = _clamp_confidence(40 + math.log10(count + 1) * 18)
+
+    return AgentOutput(
+        status="complete",
+        input_sources=[f"PubMed E-utilities ({count} papers)"],
+        findings=findings[:5] or ["No relevant publications found."],
+        confidence=confidence,
+        flags=flags,
+    )
+
+
+# ---------------------------------------------------------------------------
+# 2. Trial Agent — ClinicalTrials.gov v2
+# ---------------------------------------------------------------------------
+
+_ACTIVE_STATUSES = {"RECRUITING", "ACTIVE_NOT_RECRUITING", "ENROLLING_BY_INVITATION"}
+
+
+async def trial_agent(indication: str, target: str) -> AgentOutput:
+    gene = _gene_symbol(target)
+    term = f"{gene} ADC {indication}".strip()
+    findings: list[str] = []
+    flags: list[str] = []
+    active = 0
+
+    async with httpx.AsyncClient(timeout=_TIMEOUT, headers=_HEADERS) as client:
+        resp = await client.get(
+            CTGOV_BASE,
+            params={"query.term": term, "pageSize": "8", "format": "json"},
+        )
+        resp.raise_for_status()
+        studies = resp.json().get("studies", [])
+
+    # TODO(team): enrich — phase weighting, sponsor tiering, enrollment counts.
+    for study in studies:
+        proto = study.get("protocolSection", {})
+        ident = proto.get("identificationModule", {})
+        status_mod = proto.get("statusModule", {})
+        design = proto.get("designModule", {})
+        nct = ident.get("nctId", "")
+        title = ident.get("briefTitle", "")
+        phase = (design.get("phases") or ["N/A"])[0]
+        overall = status_mod.get("overallStatus", "")
+        if overall in _ACTIVE_STATUSES:
+            active += 1
+        if title:
+            findings.append(f"{title} — {phase} ({overall}, {nct})")
+
+    if not studies:
+        flags.append("No ClinicalTrials.gov entries for target + indication")
+    confidence = _clamp_confidence(45 + active * 10 + min(len(studies), 5) * 3)
+
+    return AgentOutput(
+        status="complete",
+        input_sources=["ClinicalTrials.gov API v2"],
+        findings=findings[:5] or ["No trials found for this target + indication."],
+        confidence=confidence,
+        flags=flags,
+    )
+
+
+# ---------------------------------------------------------------------------
+# 3. Regulatory Agent — openFDA drug labels
+# ---------------------------------------------------------------------------
+
+async def regulatory_agent(indication: str, target: str) -> AgentOutput:
+    findings: list[str] = []
+    flags: list[str] = []
+
+    async with httpx.AsyncClient(timeout=_TIMEOUT, headers=_HEADERS) as client:
+        resp = await client.get(
+            OPENFDA_LABEL,
+            params={
+                "search": f'indications_and_usage:"{indication}"',
+                "limit": "5",
+            },
+        )
+        # openFDA returns 404 when zero documents match — treat as empty, not error.
+        if resp.status_code == 404:
+            results = []
+        else:
+            resp.raise_for_status()
+            results = resp.json().get("results", [])
+
+    hits = len(results)
+    # TODO(team): parse accelerated-approval language, CDx requirements, and
+    #             boxed warnings; map comparator drugs (SG/TV/EV) per indication.
+    for label in results:
+        openfda = label.get("openfda", {})
+        brand = (openfda.get("brand_name") or ["Unknown"])[0]
+        generic = (openfda.get("generic_name") or ["unknown"])[0]
+        findings.append(f"FDA-labeled precedent in {indication}: {brand} ({generic})")
+
+    if hits == 0:
+        flags.append("No FDA label precedent for this indication")
+    confidence = _clamp_confidence(40 + hits * 12)
+
+    return AgentOutput(
+        status="complete",
+        input_sources=["openFDA drug/label.json"],
+        findings=findings[:5] or ["No FDA labels matched this indication."],
+        confidence=confidence,
+        flags=flags,
+    )
+
+
+# ---------------------------------------------------------------------------
+# 4. Commercial Agent — SEER incidence lookup table
+# ---------------------------------------------------------------------------
+
+async def commercial_agent(indication: str, target: str) -> AgentOutput:
+    # SEER has no simple public REST API; use a curated incidence table.
+    # TODO(team): swap for NCI Cancer Statistics API (api.cancer.gov) when keyed.
+    record = lookup_incidence(indication)
+    flags: list[str] = []
+
+    if record:
+        incidence = record["annual_us_incidence"]
+        findings = [
+            f"{indication} US incidence ~{incidence:,}/year (SEER)",
+            f"Estimated target+ addressable subgroup: {record['subgroup_estimate']}",
+            record.get("commercial_note", ""),
+        ]
+        findings = [f for f in findings if f]
+        confidence = 75
+    else:
+        findings = [f"No SEER incidence record for '{indication}'."]
+        flags.append("Indication missing from SEER lookup table")
+        confidence = 35
+
+    return AgentOutput(
+        status="complete",
+        input_sources=["SEER incidence table (cached)"],
+        findings=findings,
+        confidence=confidence,
+        flags=flags,
+    )
+
+
+# ---------------------------------------------------------------------------
+# 5. ADC Design Agent — molecular DB lookup (ChEMBL)
+# ---------------------------------------------------------------------------
+
+async def adc_design_agent(indication: str, target: str) -> AgentOutput:
+    gene = _gene_symbol(target)
+    findings: list[str] = []
+    flags: list[str] = []
+
+    async with httpx.AsyncClient(timeout=_TIMEOUT, headers=_HEADERS) as client:
+        resp = await client.get(CHEMBL_TARGET, params={"q": gene})
+        resp.raise_for_status()
+        targets = resp.json().get("targets", [])
+
+    # TODO(team): query payload DB for target-class ADCs, internalization
+    #             kinetics, DAR precedent, and payload (MMAE vs DXd) options.
+    if targets:
+        top = targets[0]
+        pref_name = top.get("pref_name", gene)
+        findings.append(f"ChEMBL: {len(targets)} target record(s); top match '{pref_name}'.")
+        findings.append("Payload class and DAR optimization required for therapeutic window.")
+        confidence = 60
+    else:
+        flags.append("No molecular DB record for target")
+        confidence = 45
+
+    return AgentOutput(
+        status="complete",
+        input_sources=["ChEMBL target API"],
+        findings=findings or ["No molecular design precedent retrieved."],
+        confidence=confidence,
+        flags=flags,
+    )
+
+
+# ---------------------------------------------------------------------------
+# 6. Failure Memory Agent — cached prior-ADC post-mortems
+# ---------------------------------------------------------------------------
+
+async def failure_agent(indication: str, target: str) -> AgentOutput:
+    # Cached archetypes for now.
+    # TODO(team): replace with vector search over a failure-archetype DB and
+    #             similarity-match against the candidate's profile.
+    findings = [
+        "Crowded-market archetype: late ADC entrants often capture <30% of leader revenue.",
+        "Weak-enrichment archetype: broad trials without a validated biomarker cutoff underperform.",
+        "Target-liability archetype: normal-tissue expression narrows the therapeutic index.",
     ]
-    return {name: run_agent(candidate_id, name) for name in agent_names}
+    flags = ["Crowded market risk", "Weak enrichment risk"]
+    return AgentOutput(
+        status="complete",
+        input_sources=["Prior ADC failure archetypes (cached)"],
+        findings=findings,
+        confidence=70,
+        flags=flags,
+    )
+
+
+# ---------------------------------------------------------------------------
+# 7. BioNeMo Agent — NVIDIA BioNeMo cloud endpoint (async POST)
+# ---------------------------------------------------------------------------
+
+async def bionemo_agent(indication: str, target: str) -> AgentOutput:
+    api_key = os.environ.get("NGC_API_KEY")
+    gene = _gene_symbol(target)
+
+    if not api_key:
+        # Graceful degradation when credentials are absent (offline/demo mode).
+        return AgentOutput(
+            status="complete",
+            input_sources=["BioNeMo (not configured)"],
+            findings=["BioNeMo credentials not set — skipped live plausibility call."],
+            confidence=50,
+            flags=["BioNeMo API key missing"],
+        )
+
+    async with httpx.AsyncClient(timeout=_TIMEOUT, headers=_HEADERS) as client:
+        resp = await client.post(
+            BIONEMO_ENDPOINT,
+            headers={"Authorization": f"Bearer {api_key}"},
+            json={"target": gene, "indication": indication},
+        )
+        resp.raise_for_status()
+        data = resp.json()
+
+    # TODO(team): map BioNeMo response → pathway proximity, druggability,
+    #             internalization, and cross-reactivity → findings + confidence.
+    plausibility = data.get("overall_plausibility", 0.7)
+    findings = [
+        f"Pathway proximity: {data.get('pathway_proximity', 'n/a')}",
+        f"Druggability score: {data.get('druggability_score', 'n/a')}",
+        f"Internalization efficiency: {data.get('internalization_efficiency', 'n/a')}",
+    ]
+    return AgentOutput(
+        status="complete",
+        input_sources=["NVIDIA BioNeMo NIM endpoint"],
+        findings=findings,
+        confidence=_clamp_confidence(plausibility * 100),
+        flags=[],
+    )
+
+
+# ---------------------------------------------------------------------------
+# 8. Strategy Agent — executive synthesis of the other agents
+# ---------------------------------------------------------------------------
+
+async def strategy_agent(
+    indication: str,
+    target: str,
+    upstream: Optional[dict] = None,
+) -> AgentOutput:
+    upstream = upstream or {}
+    confidences = [a.get("confidence", 0) for a in upstream.values()]
+    avg = sum(confidences) / len(confidences) if confidences else 50.0
+    all_flags = [f for a in upstream.values() for f in a.get("flags", [])]
+
+    # TODO(team): replace heuristic synthesis with an LLM/strategy model that
+    #             reasons over the full findings set rather than just confidence.
+    if avg >= 75:
+        thesis = "Diligence Priority: HIGH — strong, consistent multi-source signal."
+    elif avg >= 55:
+        thesis = "Diligence Priority: SELECTIVE — credible but gated on key missing data."
+    else:
+        thesis = "Diligence Priority: LOWER — weak or unvalidated signal across sources."
+
+    findings = [
+        thesis,
+        f"Mean upstream agent confidence: {avg:.0f}/100 across {len(confidences)} agents.",
+    ]
+
+    return AgentOutput(
+        status="complete",
+        input_sources=["All agent outputs"],
+        findings=findings,
+        confidence=_clamp_confidence(avg),
+        flags=list(dict.fromkeys(all_flags))[:4],
+    )
+
+
+# ---------------------------------------------------------------------------
+# Latency wrapper + orchestration
+# ---------------------------------------------------------------------------
+
+async def _run_timed(name: str, coro: Awaitable[AgentOutput]) -> tuple[str, dict]:
+    """Await one agent, measure wall-clock latency, and normalize to a dict.
+
+    Per-agent exceptions are caught here so a single failing source cannot abort
+    the asyncio.gather batch.
+    """
+    start = time.perf_counter()
+    try:
+        output = await coro
+    except Exception as exc:  # noqa: BLE001 — isolate one agent's failure
+        output = AgentOutput(
+            status="error",
+            input_sources=[],
+            findings=[f"Agent failed: {exc}"],
+            confidence=0,
+            flags=["API fetch failed"],
+        )
+    output.latency_ms = int((time.perf_counter() - start) * 1000)
+    return name, AgentOutput.model_validate(output.model_dump()).model_dump()
+
+
+# Agents that can all run concurrently. Strategy depends on these and runs after.
+_PARALLEL: list[tuple[str, Callable[[str, str], Awaitable[AgentOutput]]]] = [
+    ("Literature Agent", literature_agent),
+    ("Trial Agent", trial_agent),
+    ("Regulatory Agent", regulatory_agent),
+    ("Commercial Agent", commercial_agent),
+    ("ADC Design Agent", adc_design_agent),
+    ("Failure Memory Agent", failure_agent),
+    ("BioNeMo Agent", bionemo_agent),
+]
+
+
+async def run_all_agents(indication: str, target: str) -> dict:
+    """Fan out all parallel agents, then synthesize with the Strategy Agent.
+
+    Returns a dict keyed by agent name, each value an AgentOutput dict
+    (status, input_sources, findings, confidence, flags, latency_ms).
+    """
+    results = await asyncio.gather(
+        *[_run_timed(name, fn(indication, target)) for name, fn in _PARALLEL]
+    )
+    agents = dict(results)
+
+    strat_name, strat_out = await _run_timed(
+        "Strategy Agent", strategy_agent(indication, target, agents)
+    )
+    agents[strat_name] = strat_out
+    return agents

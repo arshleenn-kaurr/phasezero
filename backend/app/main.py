@@ -117,10 +117,10 @@ def candidates_list():
 
 
 @app.get("/api/candidates/{candidate_id}")
-def candidate_detail(candidate_id: str):
+async def candidate_detail(candidate_id: str):
     """Full diligence pipeline for one candidate (accepts PZ id or raw id)."""
     try:
-        return _build_detail(candidate_id)
+        return await _build_detail(candidate_id)
     except Exception:
         return {"error": True, "id": candidate_id, "message": "Candidate detail unavailable"}
 
@@ -237,7 +237,7 @@ def _candidate_summary(candidate: dict, scores: dict) -> dict:
     }
 
 
-def _build_detail(candidate_id: str) -> dict:
+async def _build_detail(candidate_id: str) -> dict:
     from src.pipeline import run_diligence_pipeline
     from src.scoring import score_components_detail
 
@@ -250,7 +250,7 @@ def _build_detail(candidate_id: str) -> dict:
         raise KeyError(candidate_id)
 
     assumptions = _assumptions_for(candidate)
-    out = run_diligence_pipeline(candidate, assumptions, candidates, evidence)
+    out = await run_diligence_pipeline(candidate, assumptions, candidates, evidence)
     components = score_components_detail(candidate["base_scores"], assumptions)
 
     scores = out["scores"]
